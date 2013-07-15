@@ -7,25 +7,20 @@ jul 11: made exes move columns. started adapting for consecutive levels and live
 
 jul 12: levels, endlevel animation pov skews in, firing to 6.  score and lives on display.
 
+jul 14: added two more frames to ex jumping, enabled playability during levelclear sequence
+
+
 next:
 
-github
-
-add frames to ex flipping, it's too jumpy now
 spikes
 
 spinnies on spikes
 
-kill missiles on player death....bug?  sometimes missiles stay
-
 make levels loop through, just more exes and spikes - kinda done, jusst no spokes
-
 
 high score
 
 new levels - something weird
-
-make exes fire
 
 vims? to coolect for extra life?
 
