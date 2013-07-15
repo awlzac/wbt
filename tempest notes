@@ -1,0 +1,35 @@
+wannabe-tempest
+---------------
+jul 10 '13 : added exes and primitive detection btw player and ex, and missile and ex.
+exes
+
+jul 11: made exes move columns. started adapting for consecutive levels and lives.  seems to work at moment, though i should do something to make it clear that youve died, or advanced to the next level.
+
+jul 12: levels, endlevel animation pov skews in, firing to 6.  score and lives on display.
+
+next:
+
+github
+
+add frames to ex flipping, it's too jumpy now
+spikes
+
+spinnies on spikes
+
+kill missiles on player death....bug?  sometimes missiles stay
+
+make levels loop through, just more exes and spikes - kinda done, jusst no spokes
+
+
+high score
+
+new levels - something weird
+
+make exes fire
+
+vims? to coolect for extra life?
+
+something that slows down the exes
+
+superzapper?
+
