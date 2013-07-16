@@ -16,13 +16,13 @@ import javax.swing.ImageIcon;
 public class Crawler {
 
 	private static final int C_POSES = 3;
-	private static final int MAX_V = 10;
-	private static final int SPEED = 1;
+	private static final double SPEED = 1.3;
     static final int CHEIGHT = 10;
     private static final int CHEIGHT_H = CHEIGHT/2; // half height
     private static final int CHEIGHT_HP = (int) (CHEIGHT * 0.6);  // slightly more than half
-    private int vpos;
-    private int pos;
+    private static final int MAX_MISSILES = 8;
+    private double vpos;
+    private double pos;
     private int width;
     private int height;
     private boolean visible;
@@ -30,42 +30,17 @@ public class Crawler {
     private ArrayList<Missile> missiles;
     private Level lev;
     private int pos_max;
+    private boolean fireFlag = false;
 
 
     public Crawler(Level lev) {
-//    	java.net.URL img = this.getClass().getResource(craft);
-//    	String img = craft;
-//    	System.out.println(img+" "+System.getenv("CLASSPATH"));
-//    	java.io.FileOutputStream f;
-/*
- * 		try {
- *
-			f = new java.io.FileOutputStream("bubba");
-			f.write(23);
-	    	f.close();
-		} catch (java.io.IOException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
-		*/
-//    	ImageIcon ii = new ImageIcon(img);
-//        image = ii.getImage();
-//        width = image.getWidth(null);
-//        height = image.getHeight(null);
         missiles = new ArrayList();
         visible = true;
         this.lev = lev;
         this.pos_max = lev.getColumns().size() * C_POSES -1;
-//        x = 40;
-//        y = 60;
     }
 
-
-    public void move() {
-    	if (vpos > MAX_V)
-    		vpos = MAX_V;
-    	else if (vpos < -MAX_V)
-    		vpos = -MAX_V;
+    public void move(int crawleroffset) {
         pos += vpos;
         if (lev.isContinuous()){
         	pos %= pos_max;
@@ -79,6 +54,9 @@ public class Crawler {
         		pos = 0;
         }
         
+        if (fireFlag)
+            fire(crawleroffset);
+        
     }
 
     /** 
@@ -86,7 +64,7 @@ public class Crawler {
      * @return
      */
     public int getColumn(){
-    	return pos / C_POSES;
+    	return (int)pos / C_POSES;
     }
     
     /**
@@ -99,11 +77,10 @@ public class Crawler {
      */
     public List<int[]> getCoords() {
         int colnum = getColumn();
-        int pose = pos % C_POSES;
+        int pose = (int)pos % C_POSES;
         int[][] coords=new int[9][3]; 
         
         Column column = lev.getColumns().get(colnum);
-//        colwidth = column.getWidth();
         int[] pt1 = column.getFrontPoint1();
         int[] pt2 = column.getFrontPoint2();
         switch (pose)
@@ -195,11 +172,11 @@ public class Crawler {
     }
 
     public void keyPressed(KeyEvent e, int crawleroffset) {
-
         int key = e.getKeyCode();
 
         if (key == KeyEvent.VK_SPACE) {
-            fire(crawleroffset);
+        	fireFlag = true;
+        	fire(crawleroffset);
         }
 
         if (key == KeyEvent.VK_LEFT) {
@@ -211,9 +188,16 @@ public class Crawler {
         }
     }
 
+    /**
+     * fire a missile.
+     * @param zoffset - z pos of crawler
+     */
     public void fire(int zoffset) {
-    	if (missiles.size() < 6) {
-    		missiles.add(new Missile(this.getColumn(), zoffset, true));
+    	if (missiles.size() < MAX_MISSILES) {
+    		if (missiles.size() == 0 
+    				|| missiles.get(missiles.size()-1).getZPos() > Missile.HEIGHT*2) {
+        		missiles.add(new Missile(this.getColumn(), Missile.HEIGHT/3+zoffset, true));
+    		}
     	}
     }
 
@@ -223,9 +207,11 @@ public class Crawler {
         if (key == KeyEvent.VK_LEFT) {
             vpos = 0;
         }
-
-        if (key == KeyEvent.VK_RIGHT) {
+        else if (key == KeyEvent.VK_RIGHT) {
             vpos = 0;
+        }
+        else if (key == KeyEvent.VK_SPACE) {
+        	fireFlag = false;
         }
 
     }

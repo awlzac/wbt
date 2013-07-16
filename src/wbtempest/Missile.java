@@ -5,8 +5,8 @@ import java.util.Arrays;
 import java.util.List;
 
 public class Missile {
-	private static int BASE_SPEED = 10;
-	static int HEIGHT = 20;
+	private static int BASE_SPEED = 8;
+	static int HEIGHT = 8;
 	private static int HEIGHT_H = HEIGHT/2;
 	private int colnum;
 	private int zpos;

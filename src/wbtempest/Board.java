@@ -30,17 +30,18 @@ public class Board extends JPanel implements ActionListener {
     private static Random r = new Random(new java.util.Date().getTime());
     static int B_WIDTH = 800;
     static int B_HEIGHT = 600;
-    private static final int C_X = B_WIDTH/2;  // define the center to which the z-axis points
-    private static final int C_Y = B_HEIGHT *34 /60;
-    static int LEVEL_DEPTH = 700;
+    static int LEVEL_DEPTH = 600;
     static int START_LIVES = 3;
-	private static double ZSTRETCH = 130; // lower = more stretched on z axis
+	private static double ZSTRETCH = 125; // lower = more stretched on z axis
 	private static int SPEED_LEV_ADVANCE = 7;  // speed at which we to the next board after clearing a level
+	private static int GAME_OVER_BOARDSPEED = 30;  // speed at which the game recedes when player loses
+	private static int DEATH_PAUSE_TICKS = 80;  // ticks to pause on crawler death
 
 	private Timer timer;
     private Crawler crawler;
     private ArrayList<Ex> exes;
     private ArrayList<Missile> exmissiles;
+    private ArrayList<Spike> spikes;
     private boolean clearboard=false;
     private int levelnum = 1;
     Level levelinfo;
@@ -52,7 +53,8 @@ public class Board extends JPanel implements ActionListener {
     private int score;
     private int boardpov;
     private int crawlerzoffset;
-
+    private int dptLeft;
+    private boolean crawlerSpiked;
     public Board() {
         addKeyListener(new TAdapter());
         setFocusable(true);
@@ -71,25 +73,54 @@ public class Board extends JPanel implements ActionListener {
     	gameover=false;
     	score = 0;
     	levelnum = 1;
+        exes = new ArrayList<Ex>();
+        exmissiles = new ArrayList<Missile>();
+        spikes = new ArrayList<Spike>();
     	initLevel();
     }
     
+    /**
+     * initialize a level for play
+     */
     private void initLevel(){
     	levelinfo = new Level (levelnum, B_WIDTH, B_HEIGHT);
         crawler = new Crawler(levelinfo);
-        levelcleared = false;
-        clearboard = false;
-        boardpov = crawlerzoffset = 0;
-        
-        exes = new ArrayList<Ex>();
-        exmissiles = new ArrayList<Missile>();
+        exes.clear();
         for (int i=0; i<levelinfo.getNumExes(); i++ ) {
             exes.add(new Ex(r.nextInt(levelinfo.getColumns().size()), 
             		levelinfo.getColumns().size(), 
-            		r.nextInt(LEVEL_DEPTH + LEVEL_DEPTH *levelinfo.getNumExes()/10),
        				levelinfo.exesCanMove(),
        				levelinfo.isContinuous() ));
         }
+        spikes.clear();
+        for (int i=0; i<levelinfo.getNumSpikes(); i++) {
+        	spikes.add(new Spike(r.nextInt(levelinfo.getColumns().size())));
+        }
+        
+        //also do whatever we need when rplaying a level
+        replayLevel();
+    }
+
+    /**
+     * Reattempt current level.  retains state of level after player death.
+     */
+    public void replayLevel() {
+        levelcleared = false;
+        clearboard = false;
+        boardpov = crawlerzoffset = 0;
+        dptLeft = 0;
+        crawlerSpiked = false;
+        exmissiles.clear();
+        if (exes.size() == 0) {
+        	// need at least one ex
+            exes.add(new Ex(r.nextInt(levelinfo.getColumns().size()), 
+            		levelinfo.getColumns().size(), 
+       				levelinfo.exesCanMove(),
+       				levelinfo.isContinuous() ));
+        }
+        	
+        for (Ex ex : exes )
+            ex.resetZ(r.nextInt(LEVEL_DEPTH*2 + LEVEL_DEPTH *levelinfo.getNumExes()/5) + LEVEL_DEPTH*5/4);
     }
     
     public void addNotify() {
@@ -131,8 +162,8 @@ public class Board extends JPanel implements ActionListener {
     	double zfact = getZFact(z);
     	if (z<0)
     		zfact = z * ZFACT_TAIL_SLOPE;
-    	int eff_x = x + (int)(zfact * (C_X-x));
-    	int eff_y = y + (int)(zfact * (C_Y-y));
+    	int eff_x = x + (int)(zfact * (levelinfo.getZPull_X()-x));
+    	int eff_y = y + (int)(zfact * (levelinfo.getZPull_Y()-y));
     	int[] effcoords = {eff_x, eff_y};
     	return effcoords;
     }
@@ -249,20 +280,20 @@ public class Board extends JPanel implements ActionListener {
 
     		// draw crawler
     		if (crawler.isVisible()){
-    			drawObject(g2d, Color.YELLOW, crawler.getCoords(), crawlerzoffset);
+    			Color c = Color.YELLOW;
+    			if (crawlerSpiked)
+    				c = new Color(r.nextInt(255),r.nextInt(255),r.nextInt(255));
+    			drawObject(g2d, c, crawler.getCoords(), crawlerzoffset);
     		}
 
     		// draw crawler's missiles
-    		ArrayList<Missile> ms = crawler.getMissiles();
-    		for (int i = 0; i < ms.size(); i++) {
-    			Missile m = (Missile)ms.get(i);
+    		for (Missile m : crawler.getMissiles()) {
     			if (m.isVisible())
     				drawObject(g2d, Color.YELLOW, m.getCoords(levelinfo));
     		}
 
     		// draw exes
-    		for (int i = 0; i < exes.size(); i++) {
-    			Ex ex = exes.get(i);
+    		for (Ex ex : exes) {
     			if (ex.isVisible())
     				drawObject(g2d, Color.RED, ex.getCoords(levelinfo), crawlerzoffset);
     			else {
@@ -272,26 +303,32 @@ public class Board extends JPanel implements ActionListener {
     		}
 
     		// draw ex missiles
-    		for (int i = 0; i < exmissiles.size(); i++) {
-    			Missile m = exmissiles.get(i);
-    			if (m.isVisible())
-    				drawObject(g2d, Color.GRAY, m.getCoords(levelinfo));
+    		for (Missile exm : exmissiles) {
+    			if (exm.isVisible())
+    				drawObject(g2d, Color.GRAY, exm.getCoords(levelinfo));
     		}
 
-    		// draw spikes and spinnythings?
+    		// draw spikes and spinnythings
+    		for (Spike s : spikes) {
+    			if (s.isVisible()) {
+    				List<int[]> spikeCoords = s.getCoords(levelinfo);
+    				drawObject(g2d, Color.GREEN, spikeCoords);
+    				spikeCoords.set(0, spikeCoords.get(1)); // add white dot at end
+    				drawObject(g2d, Color.WHITE, spikeCoords);
+    			}
+    			
+    			// spinny
+    		}
 
     		// other crudethings?  vims, for extra lives?
-
-    		//g2d.setColor(Color.WHITE);
-    		//g2d.drawString("Exes left: " + exes.size(), 5, 15);
-    		//        } else 
-    		g2d.setColor(Color.WHITE);
-    		g2d.drawString("Score: " + score, 5, 15);
-    		g2d.drawString("Lives: " + lives, 5, 30);
-    		g2d.drawString("Level: " + levelnum, 605, 15);
     	}
 
-    	else{ //game over
+    	g2d.setColor(Color.WHITE);
+		g2d.drawString("SCORE: " + score, 5, 15);
+		g2d.drawString("LIVES: " + lives, 5, 30);
+		g2d.drawString("LEVEL: " + levelnum, 605, 15);
+
+		if (gameover) {
     		String gmovr_msg = "Game Over";
     		String restart_msg = "Press Space to Restart";
     		Font small = new Font("Helvetica", Font.BOLD, 14);
@@ -310,26 +347,38 @@ public class Board extends JPanel implements ActionListener {
     }
 
     /**
-     * Timer driven update function, handles position updating.  
+     * Timer driven update function, handles position updating for
+     * everything on board.  
      * Driven by this.timer.
      * 
      */
     public void actionPerformed(ActionEvent e) {
+    	boolean playerDead = (clearboard && !levelcleared) || crawlerSpiked;
 
     	if (pause)
     		return; // if we're on pause, don't do anything.
-    	
-		crawler.move();
+
+    	// if player died, they don't get to move crawler
+    	if (!playerDead)
+    		crawler.move(crawlerzoffset);
+
     	if (clearboard)	{ 
     		// if we're clearing the board, updating reduces to the boardclear animations
-
-    		if (levelcleared)
+    		if (crawlerSpiked) {
+    			dptLeft -=1;
+    			if (dptLeft <= 0)
+    				if (lives > 0)
+    					replayLevel();
+    				else
+    					crawlerSpiked = false; // damage has been done; other case will now handle game over.
+    		}
+    		else if (levelcleared)
     		{   // player passed level.  
     			// pull board out towards screen until player leaves far end of board.
     			boardpov += SPEED_LEV_ADVANCE;
     			if (crawlerzoffset < LEVEL_DEPTH)
     				crawlerzoffset+=SPEED_LEV_ADVANCE; 
-    			
+
     			if (boardpov > LEVEL_DEPTH * 5/4)
     			{
     				levelnum++;
@@ -340,18 +389,19 @@ public class Board extends JPanel implements ActionListener {
     		}
     		else if (lives > 0)
     		{   // player died but we can continue - suck crawler down and restart level
-    			crawlerzoffset += 10;
+    			crawlerzoffset += SPEED_LEV_ADVANCE*2;
     			if (crawlerzoffset > LEVEL_DEPTH)
-    				initLevel();
+    				replayLevel();
     		}
     		else
     		{ // player died and game is over.  advance everything along z away from player.
-    			if (boardpov > -LEVEL_DEPTH *5)
-    			  boardpov -= 50;
+    			if (boardpov > -LEVEL_DEPTH *7)
+    				boardpov -= GAME_OVER_BOARDSPEED;
     			else
-    			  gameover=true;
+    				gameover=true;
     		}
     	}
+
     	if (lives > 0)
     	{
     		if (levelprep)
@@ -364,24 +414,26 @@ public class Board extends JPanel implements ActionListener {
     				levelprep = false;
     			}
     		}
-    		
-    		{
-        		
-    			ArrayList<Missile> ms = crawler.getMissiles();
-    			for (int i = 0; i < ms.size(); i++) {
-    				Missile m = (Missile) ms.get(i);
-    				if (m.isVisible()) 
-    					m.move(LEVEL_DEPTH);
-    				else
-    					ms.remove(i);
-    			}
 
+    		// update player missile positions
+    		ArrayList<Missile> ms = crawler.getMissiles();
+    		for (int i = 0; i < ms.size(); i++) {
+    			Missile m = (Missile) ms.get(i);
+    			if (m.isVisible()) 
+    				m.move(LEVEL_DEPTH);
+    			else
+    				ms.remove(i);
+    		}
+
+    		if (!playerDead)
+    		{   // if the player is alive, the exes can shoot
     			for (int i = 0; i < exes.size(); i++) {
     				Ex ex = (Ex) exes.get(i);
     				if (ex.isVisible()) 
     				{
     					ex.move(B_WIDTH, crawler.getColumn());
-    					if (ex.getZ() < LEVEL_DEPTH && r.nextInt(10000) < levelinfo.getExFireBPS())
+    					if ((ex.getZ() < LEVEL_DEPTH) 
+    							&& (r.nextInt(10000) < levelinfo.getExFireBPS()))
     					{ // this ex fires a missile
     						exmissiles.add(new Missile(ex.getColumn(), ex.getZ(), false));
     					}
@@ -389,23 +441,26 @@ public class Board extends JPanel implements ActionListener {
     				else 
     					exes.remove(i);
     			}
+    		}
 
-    			for (int i = 0; i < exmissiles.size(); i++) {
-    				Missile m = (Missile) exmissiles.get(i);
-    				if (m.isVisible()) 
-    					m.move(LEVEL_DEPTH);
-    				else
-    					exmissiles.remove(i);
+    		// update ex missiles
+    		for (int i = 0; i < exmissiles.size(); i++) {
+    			Missile exm = (Missile) exmissiles.get(i);
+    			if (exm.isVisible()) 
+    				exm.move(LEVEL_DEPTH);
+    			else {
+    				exmissiles.remove(i);
     			}
+    		}
 
+    		if (!playerDead)
     			checkCollisions();
 
-    			// did player clear level?
-    			if (exes.size() <= 0)
-    			{
-    				levelcleared = true;
-    				clearboard = true;
-    			}
+    		// did player clear level?
+    		if (exes.size() <= 0 && !crawlerSpiked)
+    		{
+    			levelcleared = true;
+    			clearboard = true;
     		}
     	}
     	repaint();  
@@ -420,52 +475,86 @@ public class Board extends JPanel implements ActionListener {
      * check for relevant ingame collisions
      */
     public void checkCollisions() {
-        int cCol = crawler.getColumn();
+    	int cCol = crawler.getColumn();
 
-        // check ex/player
-        for (Ex ex : exes) {
-            if (ex.getColumn() == cCol && ex.getZ() < Ex.HEIGHT/2)
-            	playerDeath();
-        }
-
-        // check exes' missiles / player
-        for (Missile exm : exmissiles) {
-            if (exm.isVisible() 
-           		&& (exm.getColumn() == crawler.getColumn() && exm.getZPos() < Crawler.CHEIGHT)) 
-                	playerDeath();
-        }
-
-        // check player's missiles vs everything
-        int ncols = levelinfo.getColumns().size();
-        for (Missile m : crawler.getMissiles()) {
-            // vs exes:
+    	if (clearboard && levelcleared && !crawlerSpiked) {
+    		// check spike/player
+    		for (Spike s : spikes) {
+    			if (s.getColumn() == cCol && ((LEVEL_DEPTH-s.getLength()) < crawlerzoffset)) {
+    				playerDeath();
+    				crawlerSpiked = true;
+    				dptLeft = DEATH_PAUSE_TICKS;
+    				levelcleared = false;  
+    				break;
+    			}
+    		}
+    	}
+    	else {
+    		// check ex/player
         	for (Ex ex : exes) {
-                // check for normal missile/ex collision, also ex adjacent to crawler
-                if (m.isVisible() 
-                		&& (m.getColumn() == ex.getColumn() && (Math.abs(m.getZPos() - ex.getZ())<ex.HEIGHT)) 
-                		|| ((m.getColumn() == crawler.getColumn()) 
-                				&& (ex.getZ() <= 0)
-                				&& (m.getZPos() < crawler.CHEIGHT*3)
-                				&& (((ex.getColumn() +1)%ncols == crawler.getColumn())
-                						|| ((crawler.getColumn()+1)%ncols == ex.getColumn())))){
-                    m.setVisible(false);
-                    ex.setVisible(false);
-                    score += Ex.SCOREVAL;
-                    break;
-                }
-            }
-            
-            // vs exmissiles:
-            if (m.isVisible()) {
-            	for (Missile exm : exmissiles) {
-            		if ((m.getColumn() == exm.getColumn())
-            				&& (exm.getZPos() - m.getZPos() < Missile.HEIGHT)) {
-            			exm.setVisible(false);
-            			m.setVisible(false);
-            		}
-            	}
-            }
-        }
+        		if ((ex.getColumn() == cCol) && (ex.getZ() < Ex.HEIGHT)) {
+        			playerDeath();
+        			ex.resetState();
+        			break;
+        		}
+        	}
+
+        	// check exes' missiles / player
+    		for (Missile exm : exmissiles) {
+    			if (exm.isVisible() 
+    					&& (exm.getColumn() == crawler.getColumn()) && (exm.getZPos() < Crawler.CHEIGHT)) 
+    			{
+    				playerDeath();
+    				exm.setVisible(false);
+    				break;
+    			}
+    		}
+
+    	}
+
+    	// check player's missiles vs everything
+    	int ncols = levelinfo.getColumns().size();
+    	for (Missile m : crawler.getMissiles()) {
+    		// vs exes:
+    		for (Ex ex : exes) {
+    			// check for normal missile/ex collision, also ex adjacent to crawler
+    			if (m.isVisible() 
+    					&& (m.getColumn() == ex.getColumn() && (Math.abs(m.getZPos() - ex.getZ())<ex.HEIGHT)) 
+    					|| ((m.getColumn() == crawler.getColumn()) 
+    							&& (ex.getZ() <= 0)
+    							&& (m.getZPos() < crawler.CHEIGHT*2)
+    							&& (((ex.getColumn() +1)%ncols == crawler.getColumn())
+    									|| ((crawler.getColumn()+1)%ncols == ex.getColumn())))){
+    				m.setVisible(false);
+    				ex.setVisible(false);
+    				score += Ex.SCOREVAL;
+    				break;
+    			}
+    		}
+
+    		// vs exmissiles:
+    		if (m.isVisible()) {
+    			for (Missile exm : exmissiles) {
+    				if ((m.getColumn() == exm.getColumn())
+    						&& (exm.getZPos() - m.getZPos() < Missile.HEIGHT)) {
+    					exm.setVisible(false);
+    					m.setVisible(false);
+    				}
+    			}
+    		}
+
+    		// vs spikes
+    		if (m.isVisible()) {
+    			for (Spike s : spikes) {
+    				if (m.getColumn() == s.getColumn() 
+    						&& ((LEVEL_DEPTH - s.getLength()) < m.getZPos() - Missile.HEIGHT/2)) {
+    					s.impact();
+    					m.setVisible(false);
+    					score += Spike.SPIKE_SCORE;
+    				}
+    			}
+    		}
+    	}
     }
 
     /**

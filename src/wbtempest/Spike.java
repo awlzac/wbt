@@ -1,0 +1,92 @@
+package wbtempest;
+
+import java.util.Arrays;
+import java.util.List;
+import java.util.Random;
+
+public class Spike {
+	private static int IMPACT_DAMAGE_LENGTH = 15;
+	static int SPIKE_SCORE = 2;
+	static int SPINNER_SCORE = 50;
+	private static Random r = new Random(new java.util.Date().getTime());
+	private int length;
+	private int colnum;
+	private int spinnerz;
+	private float spinnerangle;
+	private boolean visible;
+	private boolean spinnerVisible;
+
+	public Spike(int colnum) {
+		this.colnum = colnum;
+		length = r.nextInt(Board.LEVEL_DEPTH*3/4)+Board.LEVEL_DEPTH/10;
+		spinnerz = Board.LEVEL_DEPTH - r.nextInt(length);
+		spinnerangle = r.nextFloat();
+		visible = true;
+		spinnerVisible = true;
+	}
+
+	public int getColumn() {
+		return colnum;
+	}
+	
+	public int getLength() {
+		return length;
+	}
+
+	public boolean isVisible() {
+		return visible;
+	}
+
+	public boolean isSpinnerVisible() {
+		return spinnerVisible;
+	}
+
+	/**
+	 * a missile has hit this spike.  handle it.
+	 */
+	public void impact(){
+		length -= IMPACT_DAMAGE_LENGTH;
+		if (length < IMPACT_DAMAGE_LENGTH)
+			visible = false;
+	}
+	
+	public List<int[]> getSpinnerCoords(Level lev){
+		int[][] coords=new int[2][3];
+		Column c = lev.getColumns().get(colnum);
+		int[] p1 = c.getFrontPoint1();
+		int[] p2 = c.getFrontPoint2();
+		int[] mp = new int[2];
+		mp[0] = p1[0] + (p2[0]-p1[0])/2;
+		mp[1] = p1[1] + (p2[1]-p1[1])/2;
+		int colWidth = (int)Math.sqrt((p2[0]-p1[0])^2 + (p2[1]-p1[1])^2);
+		int radius = colWidth/2;
+		int nCoords = 16;
+		float rad_dist = (float) (3.1415927 * 2);
+		float step = rad_dist/(nCoords);
+		int ct = 0;
+		for (float rads=spinnerangle; rads < rad_dist+step/2; rads+=step, ct++)
+		{
+			coords[ct][0] = mp[0] - (int)(Math.sin(rads) * radius * .85);
+			coords[ct][1] = mp[1] - (int)(Math.cos(rads) * radius);
+			coords[ct][2] = spinnerz;
+		}
+    	return Arrays.asList(coords);
+	}
+
+	public List<int[]> getCoords(Level lev){
+		int[][] coords=new int[2][3];
+		Column c = lev.getColumns().get(colnum);
+		int[] p1 = c.getFrontPoint1();
+		int[] p2 = c.getFrontPoint2();
+		coords[0][0]=p1[0] + (p2[0] - p1[0])/2;
+		coords[0][1]=p1[1] + (p2[1] - p1[1])/2;
+		coords[0][2]=Board.LEVEL_DEPTH;
+		coords[1][0]=coords[0][0];
+		coords[1][1]=coords[0][1];
+		coords[1][2]=Board.LEVEL_DEPTH - length;
+    	return Arrays.asList(coords);
+	}
+	
+	
+  
+}

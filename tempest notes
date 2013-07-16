@@ -9,10 +9,12 @@ jul 12: levels, endlevel animation pov skews in, firing to 6.  score and lives o
 
 jul 14: added two more frames to ex jumping, enabled playability during levelclear sequence
 
+jul 15: added spikes and holding level state on death
 
 next:
 
-spikes
+firing when levelclearing means you can always kill spikes, cause you just keep generating missiles.
+this probably isnt cool hahah
 
 spinnies on spikes
 
@@ -20,7 +22,9 @@ make levels loop through, just more exes and spikes - kinda done, jusst no spoke
 
 high score
 
-new levels - something weird
+new levels
+  V
+  broken spiral?
 
 vims? to coolect for extra life?
 

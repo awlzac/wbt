@@ -4,55 +4,61 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class Level {
-	private static int BASE_EX_FIRE_BPS = 11;
+	private static int BASE_EX_FIRE_BPS = 35;
 	
 	private int levnum;
 	private int b_width;
 	private int b_height;
-	private int cx;
-	private int cy;
 	private int exesct;
 	private float spikespct;
 	private List<Column> columns;
 	private boolean continuous = false;
 	private boolean exesCanMove = false;
+	private int zpull_x;  // z pull is the point that the z-axis leads to for this level
+	private int zpull_y;
 	
 	public Level(int levnum, int b_width, int b_height){
+		int ncols;
+		int colsPerSide;
 		this.levnum = levnum;
 		this.b_height = b_height;
 		this.b_width = b_width;
-		cx = b_width/2;
-		cy = b_height * 19/40;
+		
+		int cx = b_width/2;  // center for drawing; not same as center that z-axis goes to.
+		int cy = b_height * 19/40;
+
+		zpull_x = b_width/2;  // default z pull to be just low of center.
+		zpull_y = b_height *34/60;
 		
 		boolean firsttime = true;
-		int oldx=0, oldy=0;
+		int x, y, oldx=0, oldy=0;
 		exesct = 6 + levnum*2; 
 		exesCanMove = (levnum != 1);
-		if (levnum < 3)
+		if (levnum < 4)
 			spikespct = 0;
 		else if (levnum < 6)
-			spikespct = (float) 0.3;
-		else if (levnum < 6)
-			spikespct = (float) 0.6;
-		else spikespct = (float) 0.8;
-		int numscreens = 2;
-		int screennum = (levnum -2) % numscreens;
-		if (screennum <0)
-		  screennum = 0;
+			spikespct = (float) 0.5;
+		else if (levnum < 8)
+			spikespct = (float) 0.75;
+		else spikespct = (float) 1;
+		int radius = 250; // consistent-ish radius for levels that have one
+		columns = new ArrayList<Column>();
+
+		// if we run out of screens....cycle
+		int numscreens = 5;
+		int screennum = (levnum-1) % numscreens;
+//		screennum=2;
 
 		switch (screennum) {
-		case 0:
-				// circle
+		case 0:	// circle
+				ncols = 16;
 				continuous = true;
-				columns = new ArrayList<Column>();
-				int ncols = 16;
 				float rad_dist = (float) (3.1415927 * 2);
 				float step = rad_dist/(ncols);
-				int radius = 250;
 				for (float rads=0; rads < rad_dist+step/2; rads+=step)
 				{
-					int x = cx - (int)(Math.sin(rads) * radius * .85);
-					int y = cy - (int)(Math.cos(rads) * radius);
+					x = cx - (int)(Math.sin(rads) * radius * .95);
+					y = cy - (int)(Math.cos(rads) * radius);
 					if (firsttime){
 						firsttime = false;
 					}
@@ -64,11 +70,115 @@ public class Level {
 					oldy = y;
 				}
 				break;
-			case 1: // straight line
+				
+			case 1: // square
+				continuous = true;
 				ncols = 16;
-				columns = new ArrayList<Column>();
-				int y = b_height * 6/7;
-				for (int x = b_width *1/(ncols+2); x < b_width * (1+ncols)/(ncols+2); x+= b_width/(ncols+2)){
+				colsPerSide = ncols/4;
+				// left
+				for (x = cx - radius, y = cy-radius; y < cy+radius; y+=(radius*2/colsPerSide)){
+					if (firsttime){
+						firsttime = false;
+					}
+					else {
+						Column col = new Column(oldx, oldy, x, y);
+						columns.add(col);
+					}
+					oldx = x;
+					oldy = y;
+				}
+				// bottom
+				for (x = cx - radius, y = cy+radius; x < cx+radius; x+=(radius*2/colsPerSide)){
+					Column col = new Column(oldx, oldy, x, y);
+					columns.add(col);
+					oldx = x;
+					oldy = y;
+				}
+				// right
+				for (x = cx + radius, y = cy+radius; y > cy-radius; y-=(radius*2/colsPerSide)){
+					Column col = new Column(oldx, oldy, x, y);
+					columns.add(col);
+					oldx = x;
+					oldy = y;
+				}
+				// top
+				for (x = cx + radius, y = cy-radius; x >= cx-radius; x-=(radius*2/colsPerSide)){
+					Column col = new Column(oldx, oldy, x, y);
+					columns.add(col);
+					oldx = x;
+					oldy = y;
+				}
+				break;
+				
+			case 2: // triangle
+				continuous = true;
+				ncols = 15;
+				colsPerSide = ncols/3;
+				cy = b_height*3/5;
+				// left
+				for (x = cx, y = cy-radius; y < cy+radius*3/4; y+=(radius*3/2/colsPerSide),x-=radius*2/3/colsPerSide){
+					if (firsttime){
+						firsttime = false;
+					}
+					else {
+						Column col = new Column(oldx, oldy, x, y);
+						columns.add(col);
+					}
+					oldx = x;
+					oldy = y;
+				}
+				// bottom
+				firsttime = true;
+				int targx = cx + (cx-oldx);
+				for (x = oldx, y = oldy; x < targx; x+=(radius*4/3/colsPerSide)){
+					if (firsttime){
+						firsttime = false;
+					}
+					else {
+						Column col = new Column(oldx, oldy, x, y);
+						columns.add(col);
+					}
+					oldx = x;
+					oldy = y;
+				}
+				// right
+				for (; y >= cy-radius; y-=(radius*3/2/colsPerSide),x-=radius*2/3/colsPerSide){
+					Column col = new Column(oldx, oldy, x, y);
+					columns.add(col);
+					oldx = x;
+					oldy = y;
+				}
+				break;
+				
+			case 3: // V
+				ncols = 16;
+				zpull_x = b_width/2; 
+				zpull_y = b_height /4;
+				for (x = cx/2, y=cy/3; x < cx; x+= cx/2/(ncols/2), y+=(cy*3/2)/(ncols/2)){
+					if (firsttime){
+						firsttime = false;
+					}
+					else {
+						Column col = new Column(oldx, oldy, x, y);
+						columns.add(col);
+					}
+					oldx = x;
+					oldy = y;
+				}
+				for (; x <= cx*3/2; x+= cx/2/(ncols/2), y-=(cy*3/2)/(ncols/2)){
+					Column col = new Column(oldx, oldy, x, y);
+					columns.add(col);
+					oldx = x;
+					oldy = y;
+				}
+				break;
+
+			case 4: // straight line
+				ncols = 14;
+				zpull_x = b_width/2; 
+				zpull_y = b_height /4;
+				y = b_height * 6/7;
+				for (x = b_width *1/(ncols+2); x < b_width * (1+ncols)/(ncols+2); x+= b_width/(ncols+2)){
 					if (firsttime){
 						firsttime = false;
 					}
@@ -89,6 +199,14 @@ public class Level {
 		return columns;
 	}
 	
+	public int getZPull_X() {
+		return zpull_x;
+	}
+
+	public int getZPull_Y() {
+		return zpull_y;
+	}
+	
 	public boolean isContinuous(){
 		return continuous;
 	}
@@ -106,7 +224,7 @@ public class Level {
 	}
 	
 	public int getNumSpikes(){
-		return (int) spikespct * columns.size();
+		return (int) (spikespct * columns.size());
 	}
 	
 	public List<int[]> getBoardFrontCoords(){

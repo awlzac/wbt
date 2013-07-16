@@ -14,12 +14,12 @@ public class Ex {
     // possible states of an ex
 	private static enum State {STRAIGHT, JUMPRIGHT1, JUMPLEFT1, JUMPRIGHT2, JUMPLEFT2, LANDRIGHT1, LANDRIGHT2, LANDLEFT1, LANDLEFT2};
 
-	private static int JUMPINTERVAL = 30;  // ticks
+	private static int JUMPINTERVAL = 40;  // ticks
 	private static int JUMPINTERVAL_INITIAL = 2;  // ticks
-	private static double SPEED = 2;
+	private static double SPEED = 1.4;
     private int col;
     private int ncols;
-    private double z;
+    private double z = Board.LEVEL_DEPTH;
     private boolean visible;
     private int jumptimer = 0;
     private State prefdir = State.JUMPRIGHT1;  // initial predisp to jump right
@@ -29,17 +29,22 @@ public class Ex {
     private boolean spawning = true;
  
     /**
-     * Initialize an Ex.
-     * @param col: initial column of the ex
-     * @param zdepth: initial depth; this is z-depth past the end of the game board
+     * Initialize an Ex
+     * @param col - initial column of ex
+     * @param ncols - nulber of cols the current level contains
+     * @param canMove - can the ex move col to col?
+     * @param levelContinuous - is the level continuous?
      */
-    public Ex(int col, int ncols, int zdepth, boolean canMove, boolean levelContinuous) {
+    public Ex(int col, int ncols, boolean canMove, boolean levelContinuous) {
         this.col = col;
         this.ncols = ncols;
         this.canMove = canMove;
         this.levContinuous = levelContinuous;
-        z = Board.LEVEL_DEPTH + zdepth;
         visible = true;
+    }
+    
+    public void resetZ(int zdepth) {
+    	z = zdepth;
     }
 
     public void move(int xbound, int crawlerCol) {
@@ -148,10 +153,12 @@ public class Ex {
     }
 
     public int getColumn() {
+//    	System.out.println("Ex.GetColumn returning "+col);
         return col;
     }
     
     public int getZ(){
+//    	System.out.println("Ex.GetZ "+z);
     	return (int)z;
     }
     
@@ -161,8 +168,8 @@ public class Ex {
     	Column c = lev.getColumns().get(col);
     	int[] p1 = c.getFrontPoint1();
     	int[] p2 = c.getFrontPoint2();
-    	coords[0][0] = p1[0];
-    	coords[0][1] = p1[1];
+    	coords[0][0] = p1[0] + (p2[0]-p1[0])/5;
+    	coords[0][1] = p1[1] + (p2[0]-p1[0])/5;
     	coords[0][2] = (int) z;
     	coords[1][0] = p2[0] - (p2[0]-p1[0])/2;  // center point
     	coords[1][1] = p2[1] - (p2[1]-p1[1])/2;
@@ -179,8 +186,8 @@ public class Ex {
     	coords[6][1] = p2[1] - (p2[1]-p1[1])/3;
     	coords[6][2] = (int) (z+EXHEIGHT_H*2);
     	coords[7] = coords[1];
-    	coords[8][0] = p2[0];
-    	coords[8][1] = p2[1];
+    	coords[8][0] = p2[0] - (p2[0]-p1[0])/5;
+    	coords[8][1] = p2[1] - (p2[1]-p1[1])/5;
     	coords[8][2] = (int) z;
     	coords[9] = coords[1];
     	coords[10][0] = p2[0] - (p2[0]-p1[0])/3;
@@ -197,6 +204,14 @@ public class Ex {
     	return Arrays.asList(coords);
     }
 
+    /**
+     * If the screen needs to freeze (eg player death) the ex can ve reset to 
+     * its normal state via this method.
+     */
+    public void resetState() {
+    	s = State.STRAIGHT;
+    }
+    
     /**
      * return coords for drawing this ex, based on its state.
      * 
