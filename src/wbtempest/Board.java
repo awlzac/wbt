@@ -34,7 +34,7 @@ public class Board extends JPanel implements ActionListener {
     static int START_LIVES = 3;
 	private static double ZSTRETCH = 125; // lower = more stretched on z axis
 	private static int SPEED_LEV_ADVANCE = 7;  // speed at which we to the next board after clearing a level
-	private static int GAME_OVER_BOARDSPEED = 30;  // speed at which the game recedes when player loses
+	private static int GAME_OVER_BOARDSPEED = 40;  // speed at which the game recedes when player loses
 	private static int DEATH_PAUSE_TICKS = 80;  // ticks to pause on crawler death
 
 	private Timer timer;
@@ -117,9 +117,10 @@ public class Board extends JPanel implements ActionListener {
             		levelinfo.getColumns().size(), 
        				levelinfo.exesCanMove(),
        				levelinfo.isContinuous() ));
+            exes.get(0).resetZ(LEVEL_DEPTH *5/4);
         }
-        	
-        for (Ex ex : exes )
+        else
+          for (Ex ex : exes )
             ex.resetZ(r.nextInt(LEVEL_DEPTH*2 + LEVEL_DEPTH *levelinfo.getNumExes()/5) + LEVEL_DEPTH*5/4);
     }
     
@@ -147,7 +148,7 @@ public class Board extends JPanel implements ActionListener {
     // the downside to the curve used to represent the z-axis, is that
     // it goes to infinity quickly for negative Z values.  to get around this,
     // a line is used to continue the slope manageably for negative z.
-    private static double ZFACT_TAIL_SLOPE = getZFact(1)-getZFact(0) / (1-0);
+    private static double ZFACT_TAIL_SLOPE = 2*(getZFact(1)-getZFact(0)) / (1-0);
 
     /**
      * given a point in (x,y,z) space, return the real (x,y) coords needed to 
@@ -315,9 +316,11 @@ public class Board extends JPanel implements ActionListener {
     				drawObject(g2d, Color.GREEN, spikeCoords);
     				spikeCoords.set(0, spikeCoords.get(1)); // add white dot at end
     				drawObject(g2d, Color.WHITE, spikeCoords);
+    				if (s.isSpinnerVisible()) {
+        				List<int[]> spinCoords = s.getSpinnerCoords(levelinfo);
+        				drawObject(g2d, Color.GREEN, spinCoords);
+    				}
     			}
-    			
-    			// spinny
     		}
 
     		// other crudethings?  vims, for extra lives?
@@ -379,7 +382,7 @@ public class Board extends JPanel implements ActionListener {
     			if (crawlerzoffset < LEVEL_DEPTH)
     				crawlerzoffset+=SPEED_LEV_ADVANCE; 
 
-    			if (boardpov > LEVEL_DEPTH * 5/4)
+    			if (boardpov > LEVEL_DEPTH * 3/2)
     			{
     				levelnum++;
     				initLevel();
@@ -441,7 +444,17 @@ public class Board extends JPanel implements ActionListener {
     				else 
     					exes.remove(i);
     			}
+    			
+    			for (Spike s : spikes) {
+    				if (s.isVisible()) {
+    					if (s.isSpinnerVisible()) {
+    						s.move();
+    					}
+    				}
+    			}
+
     		}
+    		
 
     		// update ex missiles
     		for (int i = 0; i < exmissiles.size(); i++) {
@@ -480,7 +493,7 @@ public class Board extends JPanel implements ActionListener {
     	if (clearboard && levelcleared && !crawlerSpiked) {
     		// check spike/player
     		for (Spike s : spikes) {
-    			if (s.getColumn() == cCol && ((LEVEL_DEPTH-s.getLength()) < crawlerzoffset)) {
+    			if (s.isVisible() && s.getColumn() == cCol && ((LEVEL_DEPTH-s.getLength()) < crawlerzoffset)) {
     				playerDeath();
     				crawlerSpiked = true;
     				dptLeft = DEATH_PAUSE_TICKS;
@@ -546,11 +559,17 @@ public class Board extends JPanel implements ActionListener {
     		// vs spikes
     		if (m.isVisible()) {
     			for (Spike s : spikes) {
-    				if (m.getColumn() == s.getColumn() 
+    				if (s.isVisible() 
+    						&& m.getColumn() == s.getColumn() 
     						&& ((LEVEL_DEPTH - s.getLength()) < m.getZPos() - Missile.HEIGHT/2)) {
     					s.impact();
     					m.setVisible(false);
     					score += Spike.SPIKE_SCORE;
+    					if (s.isSpinnerVisible() &&
+    							Math.abs(s.getSpinnerZ() - m.getZPos()) < Missile.HEIGHT) {
+    						s.setSpinnerVisible(false);
+    						score += Spike.SPINNER_SCORE;
+    					}
     				}
     			}
     		}

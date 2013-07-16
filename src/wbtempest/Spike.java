@@ -5,14 +5,17 @@ import java.util.List;
 import java.util.Random;
 
 public class Spike {
-	private static int IMPACT_DAMAGE_LENGTH = 15;
+	private static int IMPACT_DAMAGE_LENGTH = 14;
 	static int SPIKE_SCORE = 2;
+	static double SPINNER_SPIN_SPEED = .3;
+	static int SPINNER_SPEED = 4;
 	static int SPINNER_SCORE = 50;
 	private static Random r = new Random(new java.util.Date().getTime());
 	private int length;
 	private int colnum;
 	private int spinnerz;
-	private float spinnerangle;
+	private double spinnerangle;
+	private int spinnerDir = 1;
 	private boolean visible;
 	private boolean spinnerVisible;
 
@@ -20,7 +23,7 @@ public class Spike {
 		this.colnum = colnum;
 		length = r.nextInt(Board.LEVEL_DEPTH*3/4)+Board.LEVEL_DEPTH/10;
 		spinnerz = Board.LEVEL_DEPTH - r.nextInt(length);
-		spinnerangle = r.nextFloat();
+		spinnerangle = r.nextDouble();
 		visible = true;
 		spinnerVisible = true;
 	}
@@ -40,7 +43,33 @@ public class Spike {
 	public boolean isSpinnerVisible() {
 		return spinnerVisible;
 	}
+	
+	public void setSpinnerVisible(boolean v) {
+		spinnerVisible = v;
+	}
+	
+	public int getSpinnerZ() {
+		return spinnerz;
+	}
 
+	public void move() {
+		spinnerz += spinnerDir * SPINNER_SPEED;
+		spinnerangle += SPINNER_SPIN_SPEED;
+		if (spinnerz > Board.LEVEL_DEPTH){
+			spinnerz = Board.LEVEL_DEPTH;
+			spinnerDir = -1; // go up
+		}
+		else if (spinnerz < Board.LEVEL_DEPTH - length) {
+			// we're at top of spike; grow spike or flip dir
+			if (length < Board.LEVEL_DEPTH - Crawler.CHEIGHT*2 
+					&& r.nextInt(2) > 0) {
+				length+= this.IMPACT_DAMAGE_LENGTH;
+			}
+			else
+				spinnerDir = 1; // go down
+		}
+	}
+	
 	/**
 	 * a missile has hit this spike.  handle it.
 	 */
@@ -51,24 +80,26 @@ public class Spike {
 	}
 	
 	public List<int[]> getSpinnerCoords(Level lev){
-		int[][] coords=new int[2][3];
+		int nCoords = 16;
+		int[][] coords=new int[nCoords][3];
 		Column c = lev.getColumns().get(colnum);
 		int[] p1 = c.getFrontPoint1();
 		int[] p2 = c.getFrontPoint2();
 		int[] mp = new int[2];
 		mp[0] = p1[0] + (p2[0]-p1[0])/2;
 		mp[1] = p1[1] + (p2[1]-p1[1])/2;
-		int colWidth = (int)Math.sqrt((p2[0]-p1[0])^2 + (p2[1]-p1[1])^2);
-		int radius = colWidth/2;
-		int nCoords = 16;
-		float rad_dist = (float) (3.1415927 * 2);
+		int colWidth = (int)Math.sqrt(Math.pow((p2[0]-p1[0]),2) + Math.pow((p2[1]-p1[1]),2));
+		int origRadius = colWidth/3;
+		int radius = origRadius;
+		float rad_dist = (float) (3.1415927 * 2)*3;
 		float step = rad_dist/(nCoords);
 		int ct = 0;
-		for (float rads=spinnerangle; rads < rad_dist+step/2; rads+=step, ct++)
+		for (double rads=spinnerangle; ct < nCoords; rads+=step, ct++)
 		{
 			coords[ct][0] = mp[0] - (int)(Math.sin(rads) * radius * .85);
 			coords[ct][1] = mp[1] - (int)(Math.cos(rads) * radius);
 			coords[ct][2] = spinnerz;
+			radius = origRadius *ct/nCoords; 
 		}
     	return Arrays.asList(coords);
 	}

@@ -20,7 +20,7 @@ public class Crawler {
     static final int CHEIGHT = 10;
     private static final int CHEIGHT_H = CHEIGHT/2; // half height
     private static final int CHEIGHT_HP = (int) (CHEIGHT * 0.6);  // slightly more than half
-    private static final int MAX_MISSILES = 8;
+    private static final int MAX_MISSILES = 7;
     private double vpos;
     private double pos;
     private int width;

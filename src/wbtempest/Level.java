@@ -7,8 +7,6 @@ public class Level {
 	private static int BASE_EX_FIRE_BPS = 35;
 	
 	private int levnum;
-	private int b_width;
-	private int b_height;
 	private int exesct;
 	private float spikespct;
 	private List<Column> columns;
@@ -21,8 +19,6 @@ public class Level {
 		int ncols;
 		int colsPerSide;
 		this.levnum = levnum;
-		this.b_height = b_height;
-		this.b_width = b_width;
 		
 		int cx = b_width/2;  // center for drawing; not same as center that z-axis goes to.
 		int cy = b_height * 19/40;
@@ -35,7 +31,7 @@ public class Level {
 		exesct = 6 + levnum*2; 
 		exesCanMove = (levnum != 1);
 		if (levnum < 4)
-			spikespct = 0;
+			spikespct = (float)0;
 		else if (levnum < 6)
 			spikespct = (float) 0.5;
 		else if (levnum < 8)
@@ -47,7 +43,7 @@ public class Level {
 		// if we run out of screens....cycle
 		int numscreens = 5;
 		int screennum = (levnum-1) % numscreens;
-//		screennum=2;
+		screennum=4;
 
 		switch (screennum) {
 		case 0:	// circle
@@ -112,6 +108,7 @@ public class Level {
 				
 			case 2: // triangle
 				continuous = true;
+				radius = 320;
 				ncols = 15;
 				colsPerSide = ncols/3;
 				cy = b_height*3/5;
@@ -142,7 +139,7 @@ public class Level {
 					oldy = y;
 				}
 				// right
-				for (; y >= cy-radius; y-=(radius*3/2/colsPerSide),x-=radius*2/3/colsPerSide){
+				for (; y >= cy-radius; y-=(radius*3/2/colsPerSide),x-=radius*2/3/colsPerSide+1){
 					Column col = new Column(oldx, oldy, x, y);
 					columns.add(col);
 					oldx = x;
@@ -177,7 +174,7 @@ public class Level {
 				ncols = 14;
 				zpull_x = b_width/2; 
 				zpull_y = b_height /4;
-				y = b_height * 6/7;
+				y = b_height * 5/7;
 				for (x = b_width *1/(ncols+2); x < b_width * (1+ncols)/(ncols+2); x+= b_width/(ncols+2)){
 					if (firsttime){
 						firsttime = false;
