@@ -1,15 +1,21 @@
 wbt
 ===
 
-a tempest clone in java, and a small project use to play with git.
+a tempest (arcade game) clone in java, and a small project use to play with git.
 
-playable but limited.
+playable, though missing a couple features.
 
 
 to run
 ======
 
-#### no build file (developed in IDE), so ghetto it:
+#### ant build file, so to build:
+    $ ant
+
+to run:
+    $ java -jar wbtempest.jar
+
+Or without ant, ghetto it:
     $ cd src 
     $ javac wbtempest/*
     $ java wbtempest.WBTempest

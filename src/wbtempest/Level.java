@@ -43,7 +43,7 @@ public class Level {
 		// if we run out of screens....cycle
 		int numscreens = 5;
 		int screennum = (levnum-1) % numscreens;
-		screennum=4;
+		//screennum=4;
 
 		switch (screennum) {
 		case 0:	// circle

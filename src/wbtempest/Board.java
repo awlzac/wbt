@@ -382,7 +382,7 @@ public class Board extends JPanel implements ActionListener {
     			if (crawlerzoffset < LEVEL_DEPTH)
     				crawlerzoffset+=SPEED_LEV_ADVANCE; 
 
-    			if (boardpov > LEVEL_DEPTH * 3/2)
+    			if (boardpov > LEVEL_DEPTH * 5/4)
     			{
     				levelnum++;
     				initLevel();
@@ -398,7 +398,7 @@ public class Board extends JPanel implements ActionListener {
     		}
     		else
     		{ // player died and game is over.  advance everything along z away from player.
-    			if (boardpov > -LEVEL_DEPTH *7)
+    			if (boardpov > -LEVEL_DEPTH *6)
     				boardpov -= GAME_OVER_BOARDSPEED;
     			else
     				gameover=true;
