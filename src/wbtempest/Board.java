@@ -86,17 +86,32 @@ public class Board extends JPanel implements ActionListener {
     	levelinfo = new Level (levelnum, B_WIDTH, B_HEIGHT);
         crawler = new Crawler(levelinfo);
         exes.clear();
+        int ncols = levelinfo.getColumns().size();
         for (int i=0; i<levelinfo.getNumExes(); i++ ) {
-            exes.add(new Ex(r.nextInt(levelinfo.getColumns().size()), 
-            		levelinfo.getColumns().size(), 
+            exes.add(new Ex(r.nextInt(ncols),
+            		levelnum > 1 ? r.nextBoolean() : false,
+            		ncols, 
        				levelinfo.exesCanMove(),
        				levelinfo.isContinuous() ));
         }
         spikes.clear();
-        for (int i=0; i<levelinfo.getNumSpikes(); i++) {
-        	spikes.add(new Spike(r.nextInt(levelinfo.getColumns().size())));
+        if (levelinfo.getNumSpikes() > 0) {
+        	boolean hasSpike[] = new boolean[ncols];
+        	for (int i=0; i<ncols;i++)
+        		hasSpike[i]=true;
+        	for (int i=0; i<(ncols-levelinfo.getNumSpikes());) {
+        		int sc = r.nextInt(ncols);
+        		if (hasSpike[sc]) {
+        			hasSpike[sc] = false;
+        			i++;
+        		}
+        	}
+        	for (int i=0; i<ncols;i++)
+        		if (hasSpike[i])
+        			spikes.add(new Spike(i));
+        	
         }
-        
+
         //also do whatever we need when rplaying a level
         replayLevel();
     }
@@ -113,15 +128,17 @@ public class Board extends JPanel implements ActionListener {
         exmissiles.clear();
         if (exes.size() == 0) {
         	// need at least one ex
-            exes.add(new Ex(r.nextInt(levelinfo.getColumns().size()), 
+            exes.add(new Ex(r.nextInt(levelinfo.getColumns().size()),
+            		r.nextBoolean(),
             		levelinfo.getColumns().size(), 
        				levelinfo.exesCanMove(),
        				levelinfo.isContinuous() ));
             exes.get(0).resetZ(LEVEL_DEPTH *5/4);
         }
-        else
+        else {
           for (Ex ex : exes )
             ex.resetZ(r.nextInt(LEVEL_DEPTH*2 + LEVEL_DEPTH *levelinfo.getNumExes()/5) + LEVEL_DEPTH*5/4);
+        }
     }
     
     public void addNotify() {
@@ -161,7 +178,7 @@ public class Board extends JPanel implements ActionListener {
      */
     private int[] renderFromZ(int x, int y, int z){
     	double zfact = getZFact(z);
-    	if (z<0)
+    	if (z<-10) // switch to a constant slope to avoid math oblivion
     		zfact = z * ZFACT_TAIL_SLOPE;
     	int eff_x = x + (int)(zfact * (levelinfo.getZPull_X()-x));
     	int eff_y = y + (int)(zfact * (levelinfo.getZPull_Y()-y));
@@ -296,7 +313,10 @@ public class Board extends JPanel implements ActionListener {
     		// draw exes
     		for (Ex ex : exes) {
     			if (ex.isVisible())
-    				drawObject(g2d, Color.RED, ex.getCoords(levelinfo), crawlerzoffset);
+    				if (ex.isPod())
+        				drawObject(g2d, Color.MAGENTA, ex.getCoords(levelinfo), crawlerzoffset);
+    				else
+    					drawObject(g2d, Color.RED, ex.getCoords(levelinfo), crawlerzoffset);
     			else {
     				// not visible but still in list means just killed
     				drawObject(g2d, Color.WHITE, ex.getDeathCoords(levelinfo)); 
@@ -384,14 +404,14 @@ public class Board extends JPanel implements ActionListener {
 
     			if (boardpov > LEVEL_DEPTH * 5/4)
     			{
-    				levelnum++;
+     				levelnum++;
     				initLevel();
     				boardpov = -LEVEL_DEPTH * 2;
     				levelprep=true;
     			}
     		}
     		else if (lives > 0)
-    		{   // player died but we can continue - suck crawler down and restart level
+    		{   // player died but we  can continue - suck crawler down and restart level
     			crawlerzoffset += SPEED_LEV_ADVANCE*2;
     			if (crawlerzoffset > LEVEL_DEPTH)
     				replayLevel();
@@ -429,12 +449,19 @@ public class Board extends JPanel implements ActionListener {
     		}
 
     		if (!playerDead)
-    		{   // if the player is alive, the exes can shoot
+    		{   // if the player is alive, the exes can move and shoot
     			for (int i = 0; i < exes.size(); i++) {
     				Ex ex = (Ex) exes.get(i);
     				if (ex.isVisible()) 
     				{
     					ex.move(B_WIDTH, crawler.getColumn());
+    					if (ex.getZ() <= 0) {
+    				        if (ex.isPod()) {
+    				        	// we're at the top of the board; split the pod
+    				        	exes.add(ex.spawn());
+    				        	ex.setPod(false);
+    				        }
+    					}
     					if ((ex.getZ() < LEVEL_DEPTH) 
     							&& (r.nextInt(10000) < levelinfo.getExFireBPS()))
     					{ // this ex fires a missile
@@ -529,6 +556,7 @@ public class Board extends JPanel implements ActionListener {
     	int ncols = levelinfo.getColumns().size();
     	for (Missile m : crawler.getMissiles()) {
     		// vs exes:
+    		Ex newEx = null; // if this missile hits a pod, we may spawn a new ex
     		for (Ex ex : exes) {
     			// check for normal missile/ex collision, also ex adjacent to crawler
     			if (m.isVisible() 
@@ -538,12 +566,22 @@ public class Board extends JPanel implements ActionListener {
     							&& (m.getZPos() < crawler.CHEIGHT*2)
     							&& (((ex.getColumn() +1)%ncols == crawler.getColumn())
     									|| ((crawler.getColumn()+1)%ncols == ex.getColumn())))){
-    				m.setVisible(false);
-    				ex.setVisible(false);
-    				score += Ex.SCOREVAL;
-    				break;
+    				if (ex.isPod()) { // this ex is a pod; split into normal exes
+    					score += Ex.PODSCOREVAL;
+    					m.setVisible(false);
+    					ex.setPod(false);
+    					newEx = ex.spawn();
+    				}
+    				else {
+    					m.setVisible(false);
+    					ex.setVisible(false);
+    					score += Ex.SCOREVAL;
+    					break;
+    				}
     			}
     		}
+    		if (newEx != null)
+    			exes.add(newEx);
 
     		// vs exmissiles:
     		if (m.isVisible()) {
@@ -561,7 +599,7 @@ public class Board extends JPanel implements ActionListener {
     			for (Spike s : spikes) {
     				if (s.isVisible() 
     						&& m.getColumn() == s.getColumn() 
-    						&& ((LEVEL_DEPTH - s.getLength()) < m.getZPos() - Missile.HEIGHT/2)) {
+    						&& ((LEVEL_DEPTH - s.getLength()) < m.getZPos())) {
     					s.impact();
     					m.setVisible(false);
     					score += Spike.SPIKE_SCORE;

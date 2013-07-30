@@ -195,7 +195,7 @@ public class Crawler {
     public void fire(int zoffset) {
     	if (missiles.size() < MAX_MISSILES) {
     		if (missiles.size() == 0 
-    				|| missiles.get(missiles.size()-1).getZPos() > Missile.HEIGHT*2) {
+    				|| missiles.get(missiles.size()-1).getZPos() > Missile.HEIGHT*3) {
         		missiles.add(new Missile(this.getColumn(), Missile.HEIGHT/3+zoffset, true));
     		}
     	}

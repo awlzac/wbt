@@ -5,7 +5,7 @@ import java.util.List;
 import java.util.Random;
 
 public class Spike {
-	private static int IMPACT_DAMAGE_LENGTH = 14;
+	private static int IMPACT_DAMAGE_LENGTH = 15;
 	static int SPIKE_SCORE = 2;
 	static double SPINNER_SPIN_SPEED = .3;
 	static int SPINNER_SPEED = 4;

@@ -28,13 +28,13 @@ public class Level {
 		
 		boolean firsttime = true;
 		int x, y, oldx=0, oldy=0;
-		exesct = 6 + levnum*2; 
+		exesct = 5 + levnum*2; 
 		exesCanMove = (levnum != 1);
 		if (levnum < 4)
 			spikespct = (float)0;
 		else if (levnum < 6)
 			spikespct = (float) 0.5;
-		else if (levnum < 8)
+		else if (levnum < 9)
 			spikespct = (float) 0.75;
 		else spikespct = (float) 1;
 		int radius = 250; // consistent-ish radius for levels that have one

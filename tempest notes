@@ -7,11 +7,12 @@ jul 11: made exes move columns. started adapting for consecutive levels and live
 
 jul 12: levels, endlevel animation pov skews in, firing to 6.  score and lives on display.
 
-jul 14: added two more frames to ex jumping, enabled playability during levelclear sequence
+jul 14: added two more frames to ex jumping, enabled playability during levelclear sequence, 
 
 jul 15: added spikes and holding level state on death.  added spinners.  added more board levels.
 
-next:
+
+todo next:
 
 high score?
 
@@ -19,11 +20,7 @@ new levels
   fig8
   broken spiral?
 
-vims? to collect for extra life?
-
-something that slows down the exes
-
-doubleEx
+random other thing?  vims? to collect for extra life?  something that slows down the exes?
 
 superzapper?
 
