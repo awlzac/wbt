@@ -68,6 +68,34 @@ public class Missile {
 		return Arrays.asList(coords);
 	}
 
+	/**
+	 * coordinates for the second layer to be drawn; idea is to allow board to draw in 
+	 * a different color.
+	 * @param lev
+	 * @return
+	 */
+	public List<int[]> getLayerCoords(Level lev){
+		int[][] coords = new int[5][3];
+		Column c = lev.getColumns().get(colnum);
+		int[] p1 = c.getFrontPoint1();
+		int[] p2 = c.getFrontPoint2();
+		coords[0][0] = p1[0]+(p2[0] - p1[0])*9/20;
+		coords[0][1] = p1[1]+(p2[1] - p1[1])*9/20;
+		coords[0][2] = zpos-HEIGHT_H;
+		coords[1][0] = p1[0]+(p2[0] - p1[0])/2;
+		coords[1][1] = p1[1]+(p2[1] - p1[1])/2;
+		coords[1][2] = zpos-HEIGHT*3/5;
+		coords[2][0] = p1[0]+(p2[0] - p1[0])*11/20;
+		coords[2][1] = p1[1]+(p2[1] - p1[1])*11/20;
+		coords[2][2] = zpos-HEIGHT_H;
+		coords[3][0] = p1[0]+(p2[0] - p1[0])/2;
+		coords[3][1] = p1[1]+(p2[1] - p1[1])/2;
+		coords[3][2] = zpos-HEIGHT*2/5;
+		coords[4] = coords[0];
+		
+		return Arrays.asList(coords);
+	}
+
 	public void setVisible(boolean b) {
 		this.visible = b;
 	}

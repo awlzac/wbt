@@ -51,6 +51,7 @@ public class Board extends JPanel implements ActionListener {
     private boolean gameover = false;
     private int lives;
     private int score;
+    private int hiscore=0;
     private int boardpov;
     private int crawlerzoffset;
     private int dptLeft;
@@ -178,7 +179,7 @@ public class Board extends JPanel implements ActionListener {
      */
     private int[] renderFromZ(int x, int y, int z){
     	double zfact = getZFact(z);
-    	if (z<-10) // switch to a constant slope to avoid math oblivion
+    	if (z<-Ex.HEIGHT) // switch to a constant slope to avoid math oblivion
     		zfact = z * ZFACT_TAIL_SLOPE;
     	int eff_x = x + (int)(zfact * (levelinfo.getZPull_X()-x));
     	int eff_y = y + (int)(zfact * (levelinfo.getZPull_Y()-y));
@@ -306,8 +307,10 @@ public class Board extends JPanel implements ActionListener {
 
     		// draw crawler's missiles
     		for (Missile m : crawler.getMissiles()) {
-    			if (m.isVisible())
+    			if (m.isVisible()) {
     				drawObject(g2d, Color.YELLOW, m.getCoords(levelinfo));
+    				drawObject(g2d, Color.BLUE, m.getLayerCoords(levelinfo));
+    			}
     		}
 
     		// draw exes
@@ -325,8 +328,10 @@ public class Board extends JPanel implements ActionListener {
 
     		// draw ex missiles
     		for (Missile exm : exmissiles) {
-    			if (exm.isVisible())
+    			if (exm.isVisible()) {
     				drawObject(g2d, Color.GRAY, exm.getCoords(levelinfo));
+    				drawObject(g2d, Color.RED, exm.getLayerCoords(levelinfo));
+    			}
     		}
 
     		// draw spikes and spinnythings
@@ -347,9 +352,14 @@ public class Board extends JPanel implements ActionListener {
     	}
 
     	g2d.setColor(Color.WHITE);
-		g2d.drawString("SCORE: " + score, 5, 15);
-		g2d.drawString("LIVES: " + lives, 5, 30);
-		g2d.drawString("LEVEL: " + levelnum, 605, 15);
+		g2d.drawString("SCORE:", 5, 15);
+		g2d.drawString(Integer.toString(score), 55, 15);
+		if (score > hiscore)
+			hiscore = score;
+		g2d.drawString("HIGH:", 5, 30);
+		g2d.drawString(Integer.toString(hiscore), 55, 30);
+		g2d.drawString("LIVES: " + lives, 650, 15);
+		g2d.drawString("LEVEL: " + levelnum, 650, 30);
 
 		if (gameover) {
     		String gmovr_msg = "Game Over";
