@@ -8,7 +8,7 @@ public class Spike {
 	private static int IMPACT_DAMAGE_LENGTH = 15;
 	static int SPIKE_SCORE = 2;
 	static double SPINNER_SPIN_SPEED = .3;
-	static int SPINNER_SPEED = 4;
+	static int SPINNER_SPEED = 3;
 	static int SPINNER_SCORE = 50;
 	private static Random r = new Random(new java.util.Date().getTime());
 	private int length;

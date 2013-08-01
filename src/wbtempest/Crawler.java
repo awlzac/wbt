@@ -15,8 +15,8 @@ import javax.swing.ImageIcon;
 
 public class Crawler {
 
-	private static final int C_POSES = 3;
-	private static final double SPEED = 1.3;
+	private static final int C_POSES = 6;
+	private static final double SPEED = 2.2;
     static final int CHEIGHT = 10;
     private static final int CHEIGHT_H = CHEIGHT/2; // half height
     private static final int CHEIGHT_HP = (int) (CHEIGHT * 0.6);  // slightly more than half
@@ -77,7 +77,7 @@ public class Crawler {
      */
     public List<int[]> getCoords() {
         int colnum = getColumn();
-        int pose = (int)pos % C_POSES;
+        int pose = (int)pos % C_POSES / 2; // each pose here is doubled for more manageable movement
         int[][] coords=new int[9][3]; 
         
         Column column = lev.getColumns().get(colnum);

@@ -113,7 +113,7 @@ public class Board extends JPanel implements ActionListener {
         	
         }
 
-        //also do whatever we need when rplaying a level
+        //also do whatever we need when replaying a level
         replayLevel();
     }
 
@@ -179,7 +179,7 @@ public class Board extends JPanel implements ActionListener {
      */
     private int[] renderFromZ(int x, int y, int z){
     	double zfact = getZFact(z);
-    	if (z<-Ex.HEIGHT) // switch to a constant slope to avoid math oblivion
+    	if (z<-Ex.HEIGHT) // switch to a constant slope to avoid math oblivion for negative z
     		zfact = z * ZFACT_TAIL_SLOPE;
     	int eff_x = x + (int)(zfact * (levelinfo.getZPull_X()-x));
     	int eff_y = y + (int)(zfact * (levelinfo.getZPull_Y()-y));
@@ -306,10 +306,11 @@ public class Board extends JPanel implements ActionListener {
     		}
 
     		// draw crawler's missiles
+    		Color missileColors[] = {Color.BLUE, Color.RED, Color.green};
     		for (Missile m : crawler.getMissiles()) {
     			if (m.isVisible()) {
     				drawObject(g2d, Color.YELLOW, m.getCoords(levelinfo));
-    				drawObject(g2d, Color.BLUE, m.getLayerCoords(levelinfo));
+    				drawObject(g2d, missileColors[r.nextInt(missileColors.length)], m.getLayerCoords(levelinfo));
     			}
     		}
 
