@@ -1,17 +1,11 @@
 package wbtempest;
 
 import java.awt.Image;
-import java.awt.Rectangle;
 import java.awt.event.KeyEvent;
-import java.io.FileNotFoundException;
-import java.io.IOException;
 
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Iterator;
 import java.util.List;
-
-import javax.swing.ImageIcon;
 
 /**
  * Represents the player's crawler.
@@ -30,8 +24,6 @@ public class Crawler {
     private static final int INITIAL_ZAPS = 1;
     private double vpos;
     private double pos;
-    private int width;
-    private int height;
     private boolean visible;
     private Image image;
     private ArrayList<Missile> missiles;
@@ -43,7 +35,7 @@ public class Crawler {
 
 
     public Crawler(Level lev) {
-        missiles = new ArrayList();
+        missiles = new ArrayList<Missile>();
         visible = true;
         this.lev = lev;
         this.pos_max = lev.getColumns().size() * C_POSES -1;

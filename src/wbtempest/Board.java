@@ -11,12 +11,8 @@ import java.awt.event.ActionListener;
 import java.awt.event.KeyAdapter;
 import java.awt.event.KeyEvent;
 import java.io.BufferedReader;
-import java.io.ByteArrayOutputStream;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
 import java.io.FileReader;
 import java.io.FileWriter;
-import java.nio.CharBuffer;
 
 import java.util.ArrayList;
 import java.util.Random;
@@ -672,10 +668,10 @@ public class Board extends JPanel implements ActionListener {
     		for (Ex ex : exes) {
     			// check for normal missile/ex collision, also ex adjacent to crawler
     			if (m.isVisible() 
-    					&& (m.getColumn() == ex.getColumn() && (Math.abs(m.getZPos() - ex.getZ())<ex.HEIGHT)) 
+    					&& (m.getColumn() == ex.getColumn() && (Math.abs(m.getZPos() - ex.getZ())< Ex.HEIGHT)) 
     					|| ((m.getColumn() == crawler.getColumn()) 
     							&& (ex.getZ() <= 0)
-    							&& (m.getZPos() < crawler.CHEIGHT*2)
+    							&& (m.getZPos() < Crawler.CHEIGHT*2)
     							&& (((ex.getColumn() +1)%ncols == crawler.getColumn())
     									|| ((crawler.getColumn()+1)%ncols == ex.getColumn())))){
     				if (ex.isPod()) { // this ex is a pod; split into normal exes

@@ -70,7 +70,7 @@ public class Spike {
 			// we're at top of spike; grow spike or flip dir
 			if (length < Board.LEVEL_DEPTH - Crawler.CHEIGHT*2 
 					&& r.nextInt(2) > 0) {
-				length+= this.IMPACT_DAMAGE_LENGTH;
+				length+= IMPACT_DAMAGE_LENGTH;
 			}
 			else
 				spinnerDir = 1; // go down

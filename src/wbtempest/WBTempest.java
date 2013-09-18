@@ -9,7 +9,12 @@ import javax.swing.JFrame;
  */
 public class WBTempest extends JFrame {
 
-    public WBTempest() {
+    /**
+	 * 
+	 */
+	private static final long serialVersionUID = 183599951344L;
+
+	public WBTempest() {
         Board board = new Board();
         add(board);
 
