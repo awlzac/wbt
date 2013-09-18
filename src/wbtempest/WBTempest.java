@@ -2,6 +2,11 @@ package wbtempest;
 
 import javax.swing.JFrame;
 
+/**
+ * Main/Entrypoint for wbtempest. 
+ * @author ugliest
+ *
+ */
 public class WBTempest extends JFrame {
 
     public WBTempest() {

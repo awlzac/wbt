@@ -4,6 +4,12 @@ import java.awt.Color;
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * Represents the details of the level being played.
+ * 
+ * @author ugliest
+ *
+ */
 public class Level {
 	private static int BASE_EX_FIRE_BPS = 35;  // bps chance per tick that we fire an ex at player
 	
@@ -229,7 +235,7 @@ public class Level {
 	}
 	
 	public Color getLevelColor(){
-		if (levnum >= numscreens*2)
+		if (levnum > numscreens*2)
 			return Color.RED;
 		return Color.BLUE;
 	}

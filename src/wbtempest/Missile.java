@@ -4,6 +4,13 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
+/**
+ * A missile.  If being fired down into the level, it represents a player missile;
+ * if fired up (at the player), it represents an enemy missile.
+ * 
+ * @author ugliest
+ *
+ */
 public class Missile {
 	private static int BASE_SPEED = 8;
 	static int HEIGHT = 8;

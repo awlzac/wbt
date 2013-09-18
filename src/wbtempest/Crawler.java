@@ -13,6 +13,12 @@ import java.util.List;
 
 import javax.swing.ImageIcon;
 
+/**
+ * Represents the player's crawler.
+ * 
+ * @author ugliest
+ *
+ */
 public class Crawler {
 
 	private static final int C_POSES = 6;
@@ -21,6 +27,7 @@ public class Crawler {
     private static final int CHEIGHT_H = CHEIGHT/2; // half height
     private static final int CHEIGHT_HP = (int) (CHEIGHT * 0.6);  // slightly more than half
     private static final int MAX_MISSILES = 7;
+    private static final int INITIAL_ZAPS = 1;
     private double vpos;
     private double pos;
     private int width;
@@ -31,6 +38,8 @@ public class Crawler {
     private Level lev;
     private int pos_max;
     private boolean fireFlag = false;
+    private boolean szFlag = false;
+    private int superzaps = 1;
 
 
     public Crawler(Level lev) {
@@ -170,6 +179,14 @@ public class Crawler {
     private void accelLeft(){
     	vpos = -SPEED;
     }
+    
+    public boolean isSuperzapping(){
+    	return szFlag;
+    }
+    
+    public void resetZapper(){
+    	superzaps = INITIAL_ZAPS;
+    }
 
     public void keyPressed(KeyEvent e, int crawleroffset) {
         int key = e.getKeyCode();
@@ -178,13 +195,15 @@ public class Crawler {
         	fireFlag = true;
         	fire(crawleroffset);
         }
-
-        if (key == KeyEvent.VK_LEFT) {
+        else if (key == KeyEvent.VK_LEFT) {
         	accelLeft();
         }
-
-        if (key == KeyEvent.VK_RIGHT) {
+        else if (key == KeyEvent.VK_RIGHT) {
         	accelRight();
+        }
+        else if (key == KeyEvent.VK_S && superzaps > 0) {
+        	szFlag = true;
+        	superzaps--;
         }
     }
 
@@ -212,6 +231,9 @@ public class Crawler {
         }
         else if (key == KeyEvent.VK_SPACE) {
         	fireFlag = false;
+        }
+        else if (key == KeyEvent.VK_S) {
+        	szFlag = false;
         }
 
     }

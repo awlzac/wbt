@@ -4,6 +4,14 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Random;
 
+/**
+ * Represents an Ex, the principal enemy in the game, shaped like an "x".
+ * May also be a pod, which when destroyed or when reaches the front of the playing board,
+ * produces two exes.
+ * 
+ * @author ugliest
+ *
+ */
 public class Ex {
 
     static int HEIGHT = 20;

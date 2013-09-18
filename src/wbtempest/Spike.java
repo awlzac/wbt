@@ -4,6 +4,13 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Random;
 
+/**
+ * Represents a spike, which may appear in a column of the board, and may have a spinner
+ * which can grow the spike and shott missiles at the player.
+ * 
+ * @author ugliest
+ *
+ */
 public class Spike {
 	private static int IMPACT_DAMAGE_LENGTH = 15;
 	static int SPIKE_SCORE = 2;

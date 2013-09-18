@@ -3,7 +3,7 @@ wannabe-tempest
 jul 10 '13 : added exes and primitive detection btw player and ex, and missile and ex.
 exes
 
-jul 11: made exes move columns. started adapting for consecutive levels and lives.  seems to work at moment, though i should do something to make it clear that youve died, or advanced to the next level.
+jul 11: made exes move columns. started adapting for consecutive levels and lives.  seems to work at moment, though i should do something to make it clear that you've died, or advanced to the next level.
 
 jul 12: levels, endlevel animation pov skews in, firing to 6.  score and lives on display.
 
@@ -13,8 +13,6 @@ jul 15: added spikes and holding level state on death.  added spinners.  added m
 
 
 todo next:
-
-high score?
 
 new levels
   fig8

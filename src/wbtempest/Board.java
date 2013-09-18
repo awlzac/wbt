@@ -10,6 +10,13 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.KeyAdapter;
 import java.awt.event.KeyEvent;
+import java.io.BufferedReader;
+import java.io.ByteArrayOutputStream;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.FileReader;
+import java.io.FileWriter;
+import java.nio.CharBuffer;
 
 import java.util.ArrayList;
 import java.util.Random;
@@ -21,6 +28,9 @@ import java.util.*;
 
 /**
  * Main object, handles board, layout, update loop, and repainting.
+ * 
+ * Game is initiated by instantiating one of these.
+ * 
  * @author ugliest
  *
  */
@@ -36,6 +46,8 @@ public class Board extends JPanel implements ActionListener {
 	private static int SPEED_LEV_ADVANCE = 7;  // speed at which we to the next board after clearing a level
 	private static int GAME_OVER_BOARDSPEED = 40;  // speed at which the game recedes when player loses
 	private static int DEATH_PAUSE_TICKS = 80;  // ticks to pause on crawler death
+	private static int SUPERZAPPER_TICKS = 30; // how long does a superzap last?
+	private static int NUM_STARS = 50; // number of stars when entering a level
 
 	private Timer timer;
     private Crawler crawler;
@@ -54,8 +66,11 @@ public class Board extends JPanel implements ActionListener {
     private int hiscore=0;
     private int boardpov;
     private int crawlerzoffset;
-    private int dptLeft;
+    private int dptLeft;   // death pause ticks remaining; used to provide a pause when player dies.
+    private int superzapperTicksLeft = 0;  // if this is > 0, we're currently in a superzap
     private boolean crawlerSpiked;
+    private List<List<int[]>> stars;
+    
     public Board() {
         addKeyListener(new TAdapter());
         setFocusable(true);
@@ -65,9 +80,24 @@ public class Board extends JPanel implements ActionListener {
         setSize(B_WIDTH, B_HEIGHT);
         timer = new Timer(15, this);
         timer.start();
+
+        FileReader f = null;
+        try { // this is the sort of shit that made me question java.
+        	f = new FileReader("wbt.hi");
+        	BufferedReader br = new BufferedReader(f);
+        	hiscore = Integer.parseInt(br.readLine());;
+      		f.close();
+        }
+        catch (Exception e)
+        { // if we can't read the high score file...oh well.
+        }
+
         startGame();
     }
     
+    /**
+     * Initialize the game.
+     */
     private void startGame()
     {
     	lives=START_LIVES;
@@ -77,6 +107,20 @@ public class Board extends JPanel implements ActionListener {
         exes = new ArrayList<Ex>();
         enemymissiles = new ArrayList<Missile>();
         spikes = new ArrayList<Spike>();
+        stars = new ArrayList<List<int[]>>();
+        for (int i=0; i< NUM_STARS; i++){
+        	// this is awkward, but we'd like to use the existing plotting method, which expects a 
+        	// List for each thing to be drawn -- in this case, a point.
+        	int[] starcoords = new int[3];
+        	starcoords[0] = r.nextInt(B_WIDTH);
+        	starcoords[1] = r.nextInt(B_HEIGHT);
+        	starcoords[2] = -r.nextInt(LEVEL_DEPTH);
+        	List<int[]> starcoordlist = new ArrayList<int[]>();
+        	starcoordlist.add(starcoords);
+        	starcoordlist.add(starcoords);
+        	stars.add(starcoordlist);
+        }
+
     	initLevel();
     }
     
@@ -112,6 +156,7 @@ public class Board extends JPanel implements ActionListener {
         			spikes.add(new Spike(i));
         	
         }
+        crawler.resetZapper();
 
         //also do whatever we need when replaying a level
         replayLevel();
@@ -238,6 +283,10 @@ public class Board extends JPanel implements ActionListener {
     	int oldx = 0, oldy=0, oldbackx=0, oldbacky=0;
     	int z=LEVEL_DEPTH;
     	Color boardColor = levelinfo.getLevelColor();
+    	if (superzapperTicksLeft > 0) { 
+    		boardColor = new Color(r.nextInt(255),r.nextInt(255),r.nextInt(255));
+    		superzapperTicksLeft--;
+    	}
         g2d.setColor(boardColor);
     	for (int i=0; i<colCoords.size(); i++)
     	{
@@ -280,19 +329,20 @@ public class Board extends JPanel implements ActionListener {
      */
     public void paint(Graphics g) {
     	Graphics2D g2d = (Graphics2D)g;
-    	if (pause)
+		Font fnt = new Font("Helvetica", Font.BOLD, 14);
+		FontMetrics metr = this.getFontMetrics(fnt);
+
+		if (pause)
     	{
-    		Font small = new Font("Helvetica", Font.BOLD, 14);
-    		FontMetrics metr = this.getFontMetrics(small);
     		g.setColor(Color.white);
-    		g.setFont(small);
+    		g.setFont(fnt);
     		String pausestr = "PAUSED";
     		g.drawString(pausestr, (getWidth() - metr.stringWidth(pausestr)) / 2,
     				getHeight() / 2);
     		return;
     	}
     	
-    	super.paint(g);
+    	super.paint(g); // will clear screen
 
     	if (!gameover) {
     		// draw level board
@@ -301,9 +351,17 @@ public class Board extends JPanel implements ActionListener {
     		// draw crawler
     		if (crawler.isVisible()){
     			Color c = Color.YELLOW;
-    			if (crawlerSpiked)
+    			if (dptLeft > 0)
     				c = new Color(r.nextInt(255),r.nextInt(255),r.nextInt(255));
     			drawObject(g2d, c, crawler.getCoords(), crawlerzoffset);
+    		}
+    		
+    		if (boardpov < -Crawler.CHEIGHT) {
+    			// pov shows game level board in the distance; add stars for fun
+    			for (List<int[]> s : stars) {
+    				Color c = new Color(r.nextInt(255),r.nextInt(255),r.nextInt(255));
+    				drawObject(g2d, c, s);
+    			}
     		}
 
     		// draw crawler's missiles
@@ -353,33 +411,54 @@ public class Board extends JPanel implements ActionListener {
     		// other crudethings?  vims, for extra lives?
     	}
 
+		g2d.setFont(fnt);
     	g2d.setColor(Color.WHITE);
 		g2d.drawString("SCORE:", 5, 15);
-		g2d.drawString(Integer.toString(score), 55, 15);
+		g2d.drawString(Integer.toString(score), 70, 15);
 		if (score > hiscore)
 			hiscore = score;
 		g2d.drawString("HIGH:", 5, 30);
-		g2d.drawString(Integer.toString(hiscore), 55, 30);
-		g2d.drawString("LIVES: " + lives, 650, 15);
-		g2d.drawString("LEVEL: " + levelnum, 650, 30);
+		g2d.drawString(Integer.toString(hiscore), 70, 30);
+		g2d.drawString("LIVES:", 680, 15);
+		g2d.drawString(Integer.toString(lives), 745, 15);
+		g2d.drawString("LEVEL:", 680, 30);
+		g2d.drawString(Integer.toString(levelnum), 745, 30);
+		
+		if (levelprep){
+			String szapMsg = "SUPERZAPPER RECHARGE";
+			g2d.drawString(szapMsg, (getWidth()-metr.stringWidth(szapMsg))/2, B_HEIGHT *2/3);
+		}
 
 		if (gameover) {
     		String gmovr_msg = "Game Over";
     		String restart_msg = "Press Space to Restart";
-    		Font small = new Font("Helvetica", Font.BOLD, 14);
-    		FontMetrics metr = this.getFontMetrics(small);
 
     		g.setColor(Color.white);
-    		g.setFont(small);
     		g.drawString(gmovr_msg, (getWidth() - metr.stringWidth(gmovr_msg)) / 2,
     				getHeight() / 2);
     		g.drawString(restart_msg, (getWidth() - metr.stringWidth(restart_msg)) / 2,
     				getHeight() * 3/4);
+
+    		FileWriter f=null;
+            try {
+            	f = new FileWriter("wbt.hi");
+            	f.write(Integer.toString(hiscore));
+        		f.close();
+            }
+            catch (Exception e)
+            { // if we can't write the hi score file...oh well.	
+            }
+    		
     	}
 
     	Toolkit.getDefaultToolkit().sync();
     	g.dispose();
     }
+    
+    private boolean isPlayerDead(){
+    	return (clearboard && !levelcleared) || crawlerSpiked;
+    }
+    
 
     /**
      * Timer driven update function, handles position updating for
@@ -388,15 +467,18 @@ public class Board extends JPanel implements ActionListener {
      * 
      */
     public void actionPerformed(ActionEvent e) {
-    	boolean playerDead = (clearboard && !levelcleared) || crawlerSpiked;
 
     	if (pause)
     		return; // if we're on pause, don't do anything.
 
-    	// if player died, they don't get to move crawler
-    	if (!playerDead)
+    	// if player died, they don't get to move crawler or superzap
+//    	if (!isPlayerDead()){
     		crawler.move(crawlerzoffset);
-
+        	if (superzapperTicksLeft == 0 && crawler.isSuperzapping()) {
+        		superzapperTicksLeft = SUPERZAPPER_TICKS;
+        	}
+//    	}
+   	
     	if (clearboard)	{ 
     		// if we're clearing the board, updating reduces to the boardclear animations
     		if (crawlerSpiked) {
@@ -423,14 +505,17 @@ public class Board extends JPanel implements ActionListener {
     			}
     		}
     		else if (lives > 0)
-    		{   // player died but we  can continue - suck crawler down and restart level
-    			crawlerzoffset += SPEED_LEV_ADVANCE*2;
-    			if (crawlerzoffset > LEVEL_DEPTH)
-    				replayLevel();
+    		{   // player died but we can continue - pause, then suck crawler down and restart level
+    			dptLeft -=1;
+    			if (dptLeft <= 0) {
+    				crawlerzoffset += SPEED_LEV_ADVANCE*2;
+    				if (crawlerzoffset > LEVEL_DEPTH)
+    					replayLevel();
+    			}
     		}
     		else
     		{ // player died and game is over.  advance everything along z away from player.
-    			if (boardpov > -LEVEL_DEPTH *6)
+    			if (boardpov > -LEVEL_DEPTH *5)
     				boardpov -= GAME_OVER_BOARDSPEED;
     			else
     				gameover=true;
@@ -460,9 +545,8 @@ public class Board extends JPanel implements ActionListener {
     				ms.remove(i);
     		}
 
-    		if (!playerDead)
+    		if (!isPlayerDead())
     		{   // if the player is alive, the exes and spikes can move and shoot
-
     			for (int i = 0; i < exes.size(); i++) {
     				Ex ex = (Ex) exes.get(i);
     				if (ex.isVisible()) 
@@ -511,7 +595,7 @@ public class Board extends JPanel implements ActionListener {
     			}
     		}
 
-    		if (!playerDead)
+    		if (!isPlayerDead())
     			checkCollisions();
 
     		// did player clear level?
@@ -527,10 +611,11 @@ public class Board extends JPanel implements ActionListener {
     private void playerDeath() {
     	lives--;
     	clearboard = true;
+		dptLeft = DEATH_PAUSE_TICKS;
     }
 
     /**
-     * check for relevant ingame collisions
+     * check for relevant in-game collisions
      */
     public void checkCollisions() {
     	int cCol = crawler.getColumn();
@@ -541,7 +626,6 @@ public class Board extends JPanel implements ActionListener {
     			if (s.isVisible() && s.getColumn() == cCol && ((LEVEL_DEPTH-s.getLength()) < crawlerzoffset)) {
     				playerDeath();
     				crawlerSpiked = true;
-    				dptLeft = DEATH_PAUSE_TICKS;
     				levelcleared = false;  
     				break;
     			}
@@ -568,6 +652,16 @@ public class Board extends JPanel implements ActionListener {
     			}
     		}
 
+    	}
+
+    	// while not really a collision, the superzapper acts more or less like a 
+    	// collision with all on-board non-pod exes, so it goes here.
+    	if (superzapperTicksLeft == SUPERZAPPER_TICKS/2) {
+    		// halfway through the superzap, actually destroy exes
+    		for (Ex ex : exes){
+    			if (ex.getZ() < LEVEL_DEPTH && !ex.isPod())
+    				ex.setVisible(false);
+    		}
     	}
 
     	// check player's missiles vs everything
@@ -649,7 +743,7 @@ public class Board extends JPanel implements ActionListener {
             	pause = !pause;
             	repaint();
             }
-            else
+            else if (!isPlayerDead())
                 crawler.keyPressed(e, crawlerzoffset);
             
             if (gameover)

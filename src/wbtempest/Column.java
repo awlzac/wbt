@@ -1,5 +1,10 @@
 package wbtempest;
 
+/**
+ * Represents a column of the game board.  Convenience class.
+ * @author ugliest
+ *
+ */
 public class Column {
 	private int[] point1;
 	private int[] point2;
