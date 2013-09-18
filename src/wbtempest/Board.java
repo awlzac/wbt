@@ -40,7 +40,7 @@ public class Board extends JPanel implements ActionListener {
 	private Timer timer;
     private Crawler crawler;
     private ArrayList<Ex> exes;
-    private ArrayList<Missile> exmissiles;
+    private ArrayList<Missile> enemymissiles;
     private ArrayList<Spike> spikes;
     private boolean clearboard=false;
     private int levelnum = 1;
@@ -75,7 +75,7 @@ public class Board extends JPanel implements ActionListener {
     	score = 0;
     	levelnum = 1;
         exes = new ArrayList<Ex>();
-        exmissiles = new ArrayList<Missile>();
+        enemymissiles = new ArrayList<Missile>();
         spikes = new ArrayList<Spike>();
     	initLevel();
     }
@@ -126,7 +126,7 @@ public class Board extends JPanel implements ActionListener {
         boardpov = crawlerzoffset = 0;
         dptLeft = 0;
         crawlerSpiked = false;
-        exmissiles.clear();
+        enemymissiles.clear();
         if (exes.size() == 0) {
         	// need at least one ex
             exes.add(new Ex(r.nextInt(levelinfo.getColumns().size()),
@@ -237,7 +237,8 @@ public class Board extends JPanel implements ActionListener {
     private void drawBoard(Graphics2D g2d, List<int[]> colCoords, int playerCol){
     	int oldx = 0, oldy=0, oldbackx=0, oldbacky=0;
     	int z=LEVEL_DEPTH;
-        g2d.setColor(Color.BLUE);
+    	Color boardColor = levelinfo.getLevelColor();
+        g2d.setColor(boardColor);
     	for (int i=0; i<colCoords.size(); i++)
     	{
     		int[] ftCoords = renderFromZ(colCoords.get(i)[0], colCoords.get(i)[1], 0-boardpov);
@@ -255,7 +256,7 @@ public class Board extends JPanel implements ActionListener {
     			if (i < colCoords.size()-1 || i==playerCol+1 || !levelinfo.isContinuous())
         			g2d.drawLine(x,  y, backx, backy);
     			if (i == playerCol || i == playerCol + 1){
-        	        g2d.setColor(Color.BLUE);
+        	        g2d.setColor(boardColor);
     			}
     		}
     		else {
@@ -264,7 +265,7 @@ public class Board extends JPanel implements ActionListener {
     			}
     			g2d.drawLine(x,  y, backx, backy);
     			if (i == playerCol || i == playerCol + 1){
-        	        g2d.setColor(Color.BLUE);
+        	        g2d.setColor(boardColor);
     			}
     		}
     		oldx=x;
@@ -327,8 +328,8 @@ public class Board extends JPanel implements ActionListener {
     			}
     		}
 
-    		// draw ex missiles
-    		for (Missile exm : exmissiles) {
+    		// draw enemy missiles
+    		for (Missile exm : enemymissiles) {
     			if (exm.isVisible()) {
     				drawObject(g2d, Color.GRAY, exm.getCoords(levelinfo));
     				drawObject(g2d, Color.RED, exm.getLayerCoords(levelinfo));
@@ -460,7 +461,8 @@ public class Board extends JPanel implements ActionListener {
     		}
 
     		if (!playerDead)
-    		{   // if the player is alive, the exes can move and shoot
+    		{   // if the player is alive, the exes and spikes can move and shoot
+
     			for (int i = 0; i < exes.size(); i++) {
     				Ex ex = (Ex) exes.get(i);
     				if (ex.isVisible()) 
@@ -476,7 +478,7 @@ public class Board extends JPanel implements ActionListener {
     					if ((ex.getZ() < LEVEL_DEPTH) 
     							&& (r.nextInt(10000) < levelinfo.getExFireBPS()))
     					{ // this ex fires a missile
-    						exmissiles.add(new Missile(ex.getColumn(), ex.getZ(), false));
+    						enemymissiles.add(new Missile(ex.getColumn(), ex.getZ(), false));
     					}
     				}
     				else 
@@ -487,6 +489,11 @@ public class Board extends JPanel implements ActionListener {
     				if (s.isVisible()) {
     					if (s.isSpinnerVisible()) {
     						s.move();
+        					if ((s.getSpinnerZ() < LEVEL_DEPTH) 
+        							&& (r.nextInt(10000) < levelinfo.getExFireBPS()/4))
+        					{ // with 1/4 the frequency of an ex, this spinner fires a missile
+        						enemymissiles.add(new Missile(s.getColumn(), s.getSpinnerZ(), false));
+        					}
     					}
     				}
     			}
@@ -495,12 +502,12 @@ public class Board extends JPanel implements ActionListener {
     		
 
     		// update ex missiles
-    		for (int i = 0; i < exmissiles.size(); i++) {
-    			Missile exm = (Missile) exmissiles.get(i);
+    		for (int i = 0; i < enemymissiles.size(); i++) {
+    			Missile exm = (Missile) enemymissiles.get(i);
     			if (exm.isVisible()) 
     				exm.move(LEVEL_DEPTH);
     			else {
-    				exmissiles.remove(i);
+    				enemymissiles.remove(i);
     			}
     		}
 
@@ -551,7 +558,7 @@ public class Board extends JPanel implements ActionListener {
         	}
 
         	// check exes' missiles / player
-    		for (Missile exm : exmissiles) {
+    		for (Missile exm : enemymissiles) {
     			if (exm.isVisible() 
     					&& (exm.getColumn() == crawler.getColumn()) && (exm.getZPos() < Crawler.CHEIGHT)) 
     			{
@@ -596,7 +603,7 @@ public class Board extends JPanel implements ActionListener {
 
     		// vs exmissiles:
     		if (m.isVisible()) {
-    			for (Missile exm : exmissiles) {
+    			for (Missile exm : enemymissiles) {
     				if ((m.getColumn() == exm.getColumn())
     						&& (exm.getZPos() - m.getZPos() < Missile.HEIGHT)) {
     					exm.setVisible(false);
