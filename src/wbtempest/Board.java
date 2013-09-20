@@ -671,6 +671,7 @@ public class Board extends JPanel implements ActionListener {
     					&& (m.getColumn() == ex.getColumn() && (Math.abs(m.getZPos() - ex.getZ())< Ex.HEIGHT)) 
     					|| ((m.getColumn() == crawler.getColumn()) 
     							&& (ex.getZ() <= 0)
+    							&& (r.nextInt(10) < 9)  // 90% success rate for hitting adjacent exes
     							&& (m.getZPos() < Crawler.CHEIGHT*2)
     							&& (((ex.getColumn() +1)%ncols == crawler.getColumn())
     									|| ((crawler.getColumn()+1)%ncols == ex.getColumn())))){
