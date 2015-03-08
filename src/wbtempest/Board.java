@@ -5,15 +5,16 @@ import java.awt.Font;
 import java.awt.FontMetrics;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
+import java.awt.GraphicsEnvironment;
 import java.awt.Toolkit;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.KeyAdapter;
 import java.awt.event.KeyEvent;
 import java.io.BufferedReader;
+import java.io.File;
 import java.io.FileReader;
 import java.io.FileWriter;
-
 import java.util.ArrayList;
 import java.util.Random;
 
@@ -66,40 +67,29 @@ public class Board extends JPanel implements ActionListener {
     private int superzapperTicksLeft = 0;  // if this is > 0, we're currently in a superzap
     private boolean crawlerSpiked;
     private List<List<int[]>> stars;
-    
+
+	Font stdfnt, bigfnt;
+//	FontMetrics stdfntmetr;
+
     public Board() {
-        addKeyListener(new TAdapter());
-        setFocusable(true);
-        setBackground(Color.BLACK);
-        setDoubleBuffered(true);
+    	addKeyListener(new TAdapter());
+    	setFocusable(true);
+    	setBackground(Color.BLACK);
+    	setDoubleBuffered(true);
 
-        setSize(B_WIDTH, B_HEIGHT);
-        timer = new Timer(15, this);
-        timer.start();
+    	try {
+    		GraphicsEnvironment ge = 
+    				GraphicsEnvironment.getLocalGraphicsEnvironment();
+    		ge.registerFont(Font.createFont(Font.TRUETYPE_FONT, new File("lt.ttf")));
+        	stdfnt = new Font("Lowtech", Font.BOLD, 20);
+        	bigfnt = new Font("Lowtech", Font.BOLD, 50);
+    	} catch (Exception e) {
+    		// just use helvetica
+        	stdfnt = new Font("Helvetica", Font.BOLD, 14);
+        	bigfnt = stdfnt;
+    	}
+  //  	stdfntmetr = this.getFontMetrics(stdfnt);
 
-        FileReader f = null;
-        try { // this is the sort of shit that made me question java.
-        	f = new FileReader("wbt.hi");
-        	BufferedReader br = new BufferedReader(f);
-        	hiscore = Integer.parseInt(br.readLine());;
-      		f.close();
-        }
-        catch (Exception e)
-        { // if we can't read the high score file...oh well.
-        }
-
-        startGame();
-    }
-    
-    /**
-     * Initialize the game.
-     */
-    private void startGame()
-    {
-    	lives=START_LIVES;
-    	gameover=false;
-    	score = 0;
-    	levelnum = 1;
         exes = new ArrayList<Ex>();
         enemymissiles = new ArrayList<Missile>();
         spikes = new ArrayList<Spike>();
@@ -116,6 +106,37 @@ public class Board extends JPanel implements ActionListener {
         	starcoordlist.add(starcoords);
         	stars.add(starcoordlist);
         }
+
+        setSize(B_WIDTH, B_HEIGHT);
+        timer = new Timer(15, this);
+        timer.start();
+
+        FileReader f = null;
+        try { // this is the sort of shit that made me question java.
+        	f = new FileReader("wbt.hi");
+        	BufferedReader br = new BufferedReader(f);
+        	hiscore = Integer.parseInt(br.readLine());;
+      		f.close();
+        }
+        catch (Exception e)
+        { // if we can't read the high score file...oh well.
+        }
+        
+        // force soundmanager singleton to initialize
+        SoundManager.get();
+
+        startGame();
+    }
+    
+    /**
+     * Initialize the game.
+     */
+    private void startGame()
+    {
+    	lives=START_LIVES;
+    	gameover=false;
+    	score = 0;
+    	levelnum = 1;
 
     	initLevel();
     }
@@ -269,7 +290,7 @@ public class Board extends JPanel implements ActionListener {
     }
     
     /**
-     * Draw the board, based on the coordinates of the front of the 
+     * Draw the actual board, based on the coordinates of the front of the 
      * current level.  depth axis is generated.
      * 
      * @param g2d
@@ -321,20 +342,31 @@ public class Board extends JPanel implements ActionListener {
     }
 
     /**
+     * draw centered text at inpassed y.
+     * 
+     * @param g2d
+     * @param text
+     * @param y
+     */
+	private void drawCenteredText(Graphics2D g2d, String text, float y, Font fnt) {
+		g2d.setFont(fnt);
+		g2d.drawString(text, (getWidth()-this.getFontMetrics(fnt).stringWidth(text))/2, y);
+	}
+	private void drawCenteredText(Graphics2D g2d, String text, float y) {
+		drawCenteredText(g2d, text, y, stdfnt);
+	}
+
+    /**
      * Main refresh routine.
      */
     public void paint(Graphics g) {
     	Graphics2D g2d = (Graphics2D)g;
-		Font fnt = new Font("Helvetica", Font.BOLD, 14);
-		FontMetrics metr = this.getFontMetrics(fnt);
 
 		if (pause)
     	{
     		g.setColor(Color.white);
-    		g.setFont(fnt);
-    		String pausestr = "PAUSED";
-    		g.drawString(pausestr, (getWidth() - metr.stringWidth(pausestr)) / 2,
-    				getHeight() / 2);
+    		g.setFont(bigfnt);
+    		drawCenteredText(g2d, "PAUSED", getHeight() / 2);
     		return;
     	}
     	
@@ -407,33 +439,28 @@ public class Board extends JPanel implements ActionListener {
     		// other crudethings?  vims, for extra lives?
     	}
 
-		g2d.setFont(fnt);
-    	g2d.setColor(Color.WHITE);
-		g2d.drawString("SCORE:", 5, 15);
-		g2d.drawString(Integer.toString(score), 70, 15);
+    	g2d.setColor(Color.GREEN);
+		g2d.setFont(bigfnt);
+//		g2d.drawString("SCORE:", 5, 15);
+		g2d.drawString(Integer.toString(score), 100, 50);
 		if (score > hiscore)
 			hiscore = score;
-		g2d.drawString("HIGH:", 5, 30);
-		g2d.drawString(Integer.toString(hiscore), 70, 30);
-		g2d.drawString("LIVES:", 680, 15);
-		g2d.drawString(Integer.toString(lives), 745, 15);
-		g2d.drawString("LEVEL:", 680, 30);
-		g2d.drawString(Integer.toString(levelnum), 745, 30);
+		g2d.setFont(stdfnt);
+		drawCenteredText(g2d, "HIGH: " + hiscore, 30);
+		drawCenteredText(g2d, "LEVEL: "+levelnum, 55);
+		g2d.drawString("LIVES:", 680, 30);
+		g2d.drawString(Integer.toString(lives), 745, 30);
 		
 		if (levelprep){
-			String szapMsg = "SUPERZAPPER RECHARGE";
-			g2d.drawString(szapMsg, (getWidth()-metr.stringWidth(szapMsg))/2, B_HEIGHT *2/3);
+			g2d.setColor(Color.YELLOW);
+			drawCenteredText(g2d, "SUPERZAPPER RECHARGE", B_HEIGHT *2/3);
 		}
 
+	
 		if (gameover) {
-    		String gmovr_msg = "Game Over";
-    		String restart_msg = "Press Space to Restart";
-
-    		g.setColor(Color.white);
-    		g.drawString(gmovr_msg, (getWidth() - metr.stringWidth(gmovr_msg)) / 2,
-    				getHeight() / 2);
-    		g.drawString(restart_msg, (getWidth() - metr.stringWidth(restart_msg)) / 2,
-    				getHeight() * 3/4);
+    		g.setColor(Color.GREEN);
+    		drawCenteredText(g2d, "GAME OVER", getHeight() / 2, bigfnt);
+    		drawCenteredText(g2d, "PRESS SPACE TO RESTART", getHeight() * 3/4);
 
     		FileWriter f=null;
             try {
@@ -577,7 +604,6 @@ public class Board extends JPanel implements ActionListener {
     					}
     				}
     			}
-
     		}
     		
 
@@ -595,10 +621,11 @@ public class Board extends JPanel implements ActionListener {
     			checkCollisions();
 
     		// did player clear level?
-    		if (exes.size() <= 0 && !crawlerSpiked)
+    		if (exes.size() <= 0 && !crawlerSpiked && !levelcleared)
     		{
     			levelcleared = true;
     			clearboard = true;
+        		SoundManager.get().play(Sound.LEVELCLEAR);
     		}
     	}
     	repaint();  

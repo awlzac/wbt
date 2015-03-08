@@ -208,7 +208,8 @@ public class Crawler {
     		if (missiles.size() == 0 
     				|| missiles.get(missiles.size()-1).getZPos() > Missile.HEIGHT*3) {
         		missiles.add(new Missile(this.getColumn(), Missile.HEIGHT/3+zoffset, true));
-    		}
+        		SoundManager.get().play(Sound.FIRE);
+     		}
     	}
     }
 
