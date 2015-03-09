@@ -9,16 +9,14 @@ jul 12: levels, endlevel animation pov skews in, firing to 6.  score and lives o
 
 jul 14: added two more frames to ex jumping, enabled playability during levelclear sequence, 
 
-jul 15: added spikes and holding level state on death.  added spinners.  added more board levels.
+jul 15 2013: added spikes and holding level state on death.  added spinners.  added more board levels.
 
 
 todo next:
-
-new levels
+add more levels?
   fig8
   broken spiral?
 
-random other thing?  vims? to collect for extra life?  something that slows down the exes?
+random other thing?  something to collect for extra life?  something that slows down the exes?
 
-superzapper?
-
+add sound.
