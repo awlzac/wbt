@@ -24,7 +24,7 @@ public class Ex {
     // possible states of an ex
 	private static enum State {STRAIGHT, JUMPRIGHT1, JUMPLEFT1, JUMPRIGHT2, JUMPLEFT2, LANDRIGHT1, LANDRIGHT2, LANDLEFT1, LANDLEFT2};
 
-	private static int JUMPINTERVAL = 40;  // ticks
+	private static int JUMPINTERVAL = 30;  // ticks
 	private static int JUMPINTERVAL_INITIAL = 2;  // ticks
 	private static double SPEED = 1.4;
     private int col;

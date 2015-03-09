@@ -2,6 +2,9 @@ package wbtempest;
 
 public enum Sound {
 	FIRE,
-	LEVELCLEAR
-
+	LEVELCLEAR,
+	ENEMYFIRE,
+	ENEMYDEATH,
+	CRAWLERDEATH,
+	CRAWLERMOVE
 }

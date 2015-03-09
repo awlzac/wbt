@@ -1,11 +1,15 @@
 package wbtempest;
 
+import java.io.BufferedInputStream;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStream;
 import java.nio.ByteBuffer;
 import java.util.HashMap;
+import java.util.LinkedList;
+import java.util.List;
 import java.util.Map;
 
 import javax.sound.sampled.AudioFileFormat;
@@ -29,7 +33,6 @@ public class SoundManager {
 
 	private static SoundManager sm = null;
 	private Map<Sound, GameSoundData> soundMap = null;
-	private static final String soundDir="audio/";
 	
 	public static SoundManager get() {
 		if (sm == null)
@@ -41,8 +44,12 @@ public class SoundManager {
 		soundMap = new HashMap<Sound, GameSoundData>();
 
         try {
-        	soundMap.put(Sound.FIRE, loadSound(soundDir+"fire.aiff"));
-        	soundMap.put(Sound.LEVELCLEAR, loadSound(soundDir+"levchg.aiff"));
+        	soundMap.put(Sound.FIRE, loadSound("fire.aiff"));
+        	soundMap.put(Sound.LEVELCLEAR, loadSound("levchg1.aiff"));
+        	soundMap.put(Sound.ENEMYFIRE, loadSound("enemyfire.aiff"));
+        	soundMap.put(Sound.CRAWLERDEATH, loadSound("crawldeath.aiff"));
+        	soundMap.put(Sound.ENEMYDEATH, loadSound("enemydeath.aiff"));
+        	soundMap.put(Sound.CRAWLERMOVE, loadSound("crawlding.aiff"));
         }
         catch(Exception e) {
             e.printStackTrace();
@@ -60,12 +67,17 @@ public class SoundManager {
 	 * @throws UnsupportedAudioFileException
 	 */
 	private GameSoundData loadSound(String filename) throws IOException, UnsupportedAudioFileException {
-    	File f = new File(filename);
-    	AudioFileFormat fileFormat = AudioSystem.getAudioFileFormat(f);
+		// should find sounds placed in root of jar file, which build file should do; 
+		// in an ide, setting should be tweaked to see audio dir as on path. 
+		// (e.g., in eclipse, run -> debug configs -> classpath -> add folder, 
+		//  or place audio files in root of runtime dir, likely "bin")
+    	InputStream is = this.getClass().getClassLoader().getResourceAsStream(filename);
+    	is = new BufferedInputStream(is);
+
+    	AudioFileFormat fileFormat = AudioSystem.getAudioFileFormat(is);
+		AudioInputStream ais = AudioSystem.getAudioInputStream(is);
+
 		AudioFormat audioFormat = fileFormat.getFormat();
-
-		AudioInputStream ais = AudioSystem.getAudioInputStream(f);
-
 		ByteArrayOutputStream baos = new ByteArrayOutputStream();
 		int bufSize = BUFLEN * audioFormat.getFrameSize();
 		byte[]	byteBuf = new byte[bufSize];
@@ -75,9 +87,12 @@ public class SoundManager {
 				break;
 			baos.write(byteBuf, 0, nRead);
 		};
+		ais.close();
+		is.close();
 		GameSoundData gsd = new GameSoundData();
 		gsd.format = audioFormat;
 		gsd.rawData = baos.toByteArray();
+		baos.close();
 		return gsd;
 	}
 
@@ -94,7 +109,10 @@ public class SoundManager {
         	GameSoundData gsd = soundMap.get(s);
     		ByteArrayInputStream bais = new ByteArrayInputStream(gsd.rawData);
     		AudioInputStream audio = new AudioInputStream(bais, gsd.format, gsd.rawData.length);
-            (new Thread(new SoundPlayer(audio))).start();
+            (new Thread(new SoundPlayer(s, audio))).start();
+        }
+        catch(LineUnavailableException e) {
+            // sometimes we run out of lines.  shrug.
         }
         catch(Exception e) {
             e.printStackTrace();
@@ -109,9 +127,9 @@ public class SoundManager {
 	/**
 	 * the way sound is triggered in java, from what i can tell, is a fucking disaster.
 	 * 
-	 * so basically, we create a thread which, then plays the sound (in yet 
-	 * another secondary thread), and then waits around until the second notifies
-	 * it that the second is done and mindlessly idling, so that we 
+	 * so basically, we create a thread, which then plays the sound (in yet 
+	 * another secondary thread), and then waits around until the second thread notifies
+	 * it that it's done and mindlessly idling, so that we 
 	 * can tell the second thread to close down.
 	 * 
 	 * @author ugliest
@@ -119,11 +137,13 @@ public class SoundManager {
 	 */
 	private class SoundPlayer implements Runnable, LineListener{
 		private Clip c;
+		private Sound s;
 		private boolean active = true;
 
-		public SoundPlayer(AudioInputStream ais)
+		public SoundPlayer(Sound s, AudioInputStream ais)
 			throws LineUnavailableException, IOException
 		{
+			this.s = s;
             AudioFormat format = ais.getFormat();
             DataLine.Info info = new DataLine.Info(Clip.class, format);
             c = (Clip)AudioSystem.getLine(info);

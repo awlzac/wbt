@@ -28,11 +28,11 @@ public class Level {
 		int colsPerSide;
 		this.levnum = levnum;
 		
-		int cx = b_width/2;  // center for drawing; not same as center that z-axis goes to.
-		int cy = b_height * 19/40;
+		int cx = b_width/2;  // center for drawing; not same as where z-axis goes to.
+		int cy = b_height * 31/60;
 
-		zpull_x = b_width/2;  // default z pull to be just low of center.
-		zpull_y = b_height *34/60;
+		zpull_x = b_width/2;  // where z-axis goes; default z pull to be just low of center.
+		zpull_y = b_height *35/60;
 		
 		boolean firsttime = true;
 		int x, y, oldx=0, oldy=0;

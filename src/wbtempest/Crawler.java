@@ -2,7 +2,6 @@ package wbtempest;
 
 import java.awt.Image;
 import java.awt.event.KeyEvent;
-
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -41,8 +40,18 @@ public class Crawler {
         this.pos_max = lev.getColumns().size() * C_POSES -1;
     }
 
+    /**
+     * handle crawler movement.  called per tick.
+     * @param crawleroffset
+     */
     public void move(int crawleroffset) {
+    	int prevCol = getColumn();
         pos += vpos;
+        if (prevCol != getColumn()) {
+        	// we actually moved columns
+        	SoundManager.get().play(Sound.CRAWLERMOVE);
+        }
+
         if (lev.isContinuous()){
         	pos %= pos_max;
         	if (pos < 0)

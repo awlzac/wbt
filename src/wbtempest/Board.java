@@ -15,6 +15,7 @@ import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
 import java.io.FileWriter;
+import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Random;
 
@@ -36,13 +37,13 @@ public class Board extends JPanel implements ActionListener {
 	private static final long serialVersionUID = -1467405293079888602L;
     private static Random r = new Random(new java.util.Date().getTime());
     static int B_WIDTH = 800;
-    static int B_HEIGHT = 600;
+    static int B_HEIGHT = 680;
     static int LEVEL_DEPTH = 600;
     static int START_LIVES = 3;
 	private static double ZSTRETCH = 125; // lower = more stretched on z axis
 	private static int SPEED_LEV_ADVANCE = 7;  // speed at which we to the next board after clearing a level
 	private static int GAME_OVER_BOARDSPEED = 40;  // speed at which the game recedes when player loses
-	private static int DEATH_PAUSE_TICKS = 80;  // ticks to pause on crawler death
+	private static int DEATH_PAUSE_TICKS = 70;  // ticks to pause on crawler death
 	private static int SUPERZAPPER_TICKS = 30; // how long does a superzap last?
 	private static int NUM_STARS = 50; // number of stars when entering a level
 
@@ -69,7 +70,6 @@ public class Board extends JPanel implements ActionListener {
     private List<List<int[]>> stars;
 
 	Font stdfnt, bigfnt;
-//	FontMetrics stdfntmetr;
 
     public Board() {
     	addKeyListener(new TAdapter());
@@ -78,17 +78,18 @@ public class Board extends JPanel implements ActionListener {
     	setDoubleBuffered(true);
 
     	try {
+        	InputStream fntStr = this.getClass().getClassLoader().getResourceAsStream("lt.ttf");
     		GraphicsEnvironment ge = 
     				GraphicsEnvironment.getLocalGraphicsEnvironment();
-    		ge.registerFont(Font.createFont(Font.TRUETYPE_FONT, new File("lt.ttf")));
+    		ge.registerFont(Font.createFont(Font.TRUETYPE_FONT, fntStr));
+    		fntStr.close();
         	stdfnt = new Font("Lowtech", Font.BOLD, 20);
         	bigfnt = new Font("Lowtech", Font.BOLD, 50);
     	} catch (Exception e) {
     		// just use helvetica
-        	stdfnt = new Font("Helvetica", Font.BOLD, 14);
-        	bigfnt = stdfnt;
+        	stdfnt = new Font("Helvetica", Font.BOLD, 20);
+        	stdfnt = new Font("Helvetica", Font.BOLD, 50);
     	}
-  //  	stdfntmetr = this.getFontMetrics(stdfnt);
 
         exes = new ArrayList<Ex>();
         enemymissiles = new ArrayList<Missile>();
@@ -108,8 +109,6 @@ public class Board extends JPanel implements ActionListener {
         }
 
         setSize(B_WIDTH, B_HEIGHT);
-        timer = new Timer(15, this);
-        timer.start();
 
         FileReader f = null;
         try { // this is the sort of shit that made me question java.
@@ -126,6 +125,10 @@ public class Board extends JPanel implements ActionListener {
         SoundManager.get();
 
         startGame();
+
+        // start our ghetto timer loop
+        timer = new Timer(15, this);  // appx 60fps
+        timer.start();
     }
     
     /**
@@ -495,12 +498,12 @@ public class Board extends JPanel implements ActionListener {
     		return; // if we're on pause, don't do anything.
 
     	// if player died, they don't get to move crawler or superzap
-//    	if (!isPlayerDead()){
+    	if (!isPlayerDead()){
     		crawler.move(crawlerzoffset);
         	if (superzapperTicksLeft == 0 && crawler.isSuperzapping()) {
         		superzapperTicksLeft = SUPERZAPPER_TICKS;
         	}
-//    	}
+    	}
    	
     	if (clearboard)	{ 
     		// if we're clearing the board, updating reduces to the boardclear animations
@@ -528,7 +531,8 @@ public class Board extends JPanel implements ActionListener {
     			}
     		}
     		else if (lives > 0)
-    		{   // player died but we can continue - pause, then suck crawler down and restart level
+    		{   // player died but not out of lives.
+    			// pause, then suck crawler down and restart level
     			dptLeft -=1;
     			if (dptLeft <= 0) {
     				crawlerzoffset += SPEED_LEV_ADVANCE*2;
@@ -586,6 +590,7 @@ public class Board extends JPanel implements ActionListener {
     							&& (r.nextInt(10000) < levelinfo.getExFireBPS()))
     					{ // this ex fires a missile
     						enemymissiles.add(new Missile(ex.getColumn(), ex.getZ(), false));
+        	        		SoundManager.get().play(Sound.ENEMYFIRE);
     					}
     				}
     				else 
@@ -600,6 +605,7 @@ public class Board extends JPanel implements ActionListener {
         							&& (r.nextInt(10000) < levelinfo.getExFireBPS()/4))
         					{ // with 1/4 the frequency of an ex, this spinner fires a missile
         						enemymissiles.add(new Missile(s.getColumn(), s.getSpinnerZ(), false));
+            	        		SoundManager.get().play(Sound.ENEMYFIRE);
         					}
     					}
     				}
@@ -635,6 +641,7 @@ public class Board extends JPanel implements ActionListener {
     	lives--;
     	clearboard = true;
 		dptLeft = DEATH_PAUSE_TICKS;
+		SoundManager.get().play(Sound.CRAWLERDEATH);
     }
 
     /**
@@ -682,8 +689,10 @@ public class Board extends JPanel implements ActionListener {
     	if (superzapperTicksLeft == SUPERZAPPER_TICKS/2) {
     		// halfway through the superzap, actually destroy exes
     		for (Ex ex : exes){
-    			if (ex.getZ() < LEVEL_DEPTH && !ex.isPod())
+    			if (ex.getZ() < LEVEL_DEPTH && !ex.isPod()) {
     				ex.setVisible(false);
+            		SoundManager.get().play(Sound.ENEMYDEATH);
+    			}
     		}
     	}
 
@@ -702,16 +711,20 @@ public class Board extends JPanel implements ActionListener {
     							&& (m.getZPos() < Crawler.CHEIGHT*2)
     							&& (((ex.getColumn() +1)%ncols == crawler.getColumn())
     									|| ((crawler.getColumn()+1)%ncols == ex.getColumn())))){
-    				if (ex.isPod()) { // this ex is a pod; split into normal exes
+    				if (ex.isPod()) { 
+    					// this ex is a pod; split into normal exes
     					score += Ex.PODSCOREVAL;
     					m.setVisible(false);
     					ex.setPod(false);
     					newEx = ex.spawn();
+    	        		SoundManager.get().play(Sound.ENEMYDEATH);
     				}
     				else {
+    					// player hit ex
     					m.setVisible(false);
     					ex.setVisible(false);
     					score += Ex.SCOREVAL;
+    	        		SoundManager.get().play(Sound.ENEMYDEATH);
     					break;
     				}
     			}
